@@ -117,13 +117,35 @@ export default function ReviewPage() {
                                                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">
                                                     {new Date(result.date || result.createdAt).toLocaleDateString()}
                                                 </p>
-                                                <h3 className="text-2xl font-bold text-slate-900">Total Score: {result.score}</h3>
+    
+                                     {/* TÊN BÀI TEST & ĐIỂM SỐ */}
+                                        {result.isSectional ? (
+                                            <>
+                                                <h3 className="text-2xl font-bold text-slate-900">
+                                                    {/* Đã thêm tên bài test lên trước */}
+                                                    {result.testId?.title} - {result.sectionalSubject} (Module {result.sectionalModule})
+                                                </h3>
+                                                <p className="font-bold text-xl text-blue-600 mt-1">
+                                                    Score: {result.answers.filter((a: any) => a.isCorrect).length} / {result.answers.length}
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <h3 className="text-2xl font-bold text-slate-900">
+                                                    {/* Đã thêm tên bài test cho bản Full-length */}
+                                                    {result.testId?.title} - Full Test
+                                                </h3>
+                                                <p className="font-bold text-xl text-blue-600 mt-1">Total Score: {result.score}</p>
+                                                
+                                                {/* CHỈ HIỆN ĐIỂM THÀNH PHẦN NẾU LÀ FULL TEST */}
                                                 <div className="flex gap-4 mt-2 text-sm text-slate-600 font-medium">
                                                     <span>Reading &amp; Writing: {result.sectionBreakdown?.readingAndWriting || 0}</span>
                                                     <span className="text-slate-300">|</span>
                                                     <span>Math: {result.sectionBreakdown?.math || 0}</span>
                                                 </div>
-                                            </div>
+                                            </>
+                                        )}
+                                    </div>
                                             <div className="text-right">
                                                 <p className="text-sm text-slate-500 font-medium mb-1">Performance Details</p>
                                                 <p className="text-lg font-bold">

@@ -12,9 +12,18 @@ import Loading from "@/components/Loading";
 import DesmosCalculator from "@/components/DesmosCalculator";        // Máy tính desmos
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
+import { useSearchParams } from "next/navigation";
+
 
 export default function TestEngine({ testId }: { testId: string }) {    // Lấy id của bài test -> Dựa vào id này mới biết bài này thuộc Verbal       hay Math
     const router = useRouter();
+
+
+    const searchParams = useSearchParams();
+    const mode = searchParams.get("mode") || "full"; 
+    const targetSection = searchParams.get("section"); // vd: "Math"
+    const targetModule = searchParams.get("module") ? parseInt(searchParams.get("module") as string) : null; // vd: 2
+
 
     const [testStats, setTestStats] = useState<any>(null);     // lưu thống kê kết quả của bài thi
     const [questions, setQuestions] = useState<any[]>([]);     // danh sách chứa các câu hỏi 
@@ -32,15 +41,30 @@ export default function TestEngine({ testId }: { testId: string }) {    // Lấy
 
     const [modules, setModules] = useState<any[]>([]);       // Biến mới: Chứa 4 khúc của bài test
     const [currentModuleIndex, setCurrentModuleIndex] = useState(0); // Biến mới: Nhớ xem đang ở khúc nào (0, 1, 2, 3)
-   
-    const [currentStageIndex, setCurrentStageIndex] = useState(0); // 0 đến 3 tương ứng với 4 module
-
     const testStages = [
-        { section: "Reading and Writing", module: 1, duration: 32 * 60 }, // 32 phút
-        { section: "Reading and Writing", module: 2, duration: 32 * 60 },
-        { section: "Math", module: 1, duration: 35 * 60 },   // 35 phút
-        { section: "Math", module: 2, duration: 35 * 60 },
-    ];
+                { section: "Reading and Writing", module: 1, duration: 32 * 60 }, // 32 phút
+                { section: "Reading and Writing", module: 2, duration: 32 * 60 },
+                { section: "Math", module: 1, duration: 35 * 60 },   // 35 phút
+                { section: "Math", module: 2, duration: 35 * 60 },
+            ];  
+
+
+
+
+
+    const [currentStageIndex, setCurrentStageIndex] = useState(() => {
+
+      
+
+
+        // Nếu là Sectional, quét mảng testStages tìm đúng index khớp với URL
+        if (mode === "sectional" && targetSection && targetModule) {
+            const index = testStages.findIndex(s => s.section === targetSection && s.module === targetModule);
+            return index !== -1 ? index : 0;
+        }
+        return 0; // Nếu là full test thì mặc định bắt đầu từ đầu
+    });
+   
 
     const currentStage = testStages[currentStageIndex];
     const currentModuleQuestions = questions.filter(
@@ -119,79 +143,94 @@ export default function TestEngine({ testId }: { testId: string }) {    // Lấy
     };
 
    //Gói các câu trả lời -> Đối chiếu với đáp án đúng để tính điểm -> Nhân 1600 để ra số điểm -> Gửi kết quả cho BE -> Điều hướng tới trang xem kết quả
+  
+  
+   // THAY THẾ TOÀN BỘ HÀM handleSubmit HIỆN TẠI BẰNG ĐOẠN NÀY:
     const handleSubmit = async () => {
-        // FIX: Tách logic Nộp Module và Nộp toàn bộ bài
-        if (currentStageIndex < 3) {
-            // Đang ở chặng 1, 2, 3 -> Nộp Module, chuyển qua chặng tiếp theo
+        // 1. NẾU LÀ FULL TEST VÀ CHƯA TỚI CHẶNG CUỐI -> BƯỚC SANG MODULE TIẾP THEO
+        if (mode === "full" && currentStageIndex < 3) {
             const nextStageIndex = currentStageIndex + 1;
             setCurrentStageIndex(nextStageIndex);
-            setCurrentIndex(0); // Reset về câu 1 của module mới
-            setTimeRemaining(testStages[nextStageIndex].duration); // Reset đồng hồ bằng duration của chặng mới
-            return; // Dừng tại đây, không post dữ liệu cho tới chặng cuối
+            setCurrentIndex(0); 
+            setTimeRemaining(testStages[nextStageIndex].duration); 
+            return; 
         }
 
-        // Nếu qua chặng 3 (Math 2) -> Nộp toàn bộ bài
+        // 2. NẾU LÀ SECTIONAL HOẶC ĐÃ ĐẾN CUỐI FULL TEST -> CHẤM ĐIỂM VÀ NỘP BÀI
         try {
-           // formated answer đang ở dạng array, từng ô là chứa các object bao gồm 3 thông tin của từng câu
-            const formattedAnswers = questions.map(q => {      // Đi qua từng câu
-                const userAns = answers[q._id] || "Omitted";    // Lấy đáp án của user, nếu l chọn thì lấy rỗng 
+          // Chỉ lấy câu hỏi của Module hiện tại nếu đang thi Sectional, ngược lại lấy toàn bộ
+            const questionsToGrade = mode === "sectional" ? currentModuleQuestions : questions;
+
+            const formattedAnswers = questionsToGrade.map(q => {
+                const userAns = answers[q._id] || "Omitted";
                 return {
-                    questionId: q._id,                // Lưu lại thông tin câu hỏi nào
-                    userAnswer: userAns,              // ans của user
-                    isCorrect: userAns === q.correctAnswer   // state đúng hay sai
+                    questionId: q._id,
+                    userAnswer: userAns,
+                    isCorrect: userAns === q.correctAnswer
                 };
             });
 
+            if (mode === "sectional") {
+                // TÍNH ĐIỂM DẠNG SECTIONAL: Đếm số câu đúng
+                let correctCount = 0;
+                currentModuleQuestions.forEach(q => {
+                    const userAns = answers[q._id] || "";
+                    if (userAns === q.correctAnswer) correctCount++;
+                });
 
+                // Gửi API với các trường dữ liệu tương thích với Schema mới
+                const res = await api.post(API_PATHS.RESULTS, {
+                    testId,
+                    isSectional: true,                       // Cờ báo hiệu đây là bài làm từng phần
+                    sectionalSubject: currentStage.section,  // "Reading and Writing" hoặc "Math"
+                    sectionalModule: currentStage.module,    // 1 hoặc 2
+                    answers: formattedAnswers,
+                    totalScore: correctCount,                // Mượn tạm trường totalScore để lưu số câu đúng
+                    readingScore: 0,                         // Điền 0 để máy chủ không báo lỗi "thiếu điểm"
+                    mathScore: 0                             // Điền 0 để máy chủ không báo lỗi "thiếu điểm"
+                });
 
-
-            // 1. Tạo 2 giỏ đựng điểm cho 2 phần thi riêng biệt (khởi điểm là 0)
-            let earnedReadingPoints = 0;
-            let earnedMathPoints = 0;
-
-            // 2. Đi qua từng câu hỏi trong toàn bộ đề thi
-            questions.forEach(q => {
-                const userAns = answers[q._id] || "";
-                
-                // Nếu học sinh chọn đúng đáp án
-                if (userAns === q.correctAnswer) {
-                    const points = q.points || 0; // Lấy trọng số của câu đó (mặc định là 0 nếu admin quên điền)
-                    
-                    // Phân loại xem câu đúng này thuộc phần nào để cộng điểm vào giỏ phần đó
-                    if (q.section === "Reading and Writing") {
-                        earnedReadingPoints += points;
-                    } else if (q.section === "Math") {
-                        earnedMathPoints += points;
-                    }
+                if (res.status === 200 || res.status === 201) {
+                    router.push(`/review?testId=${testId}&mode=sectional`);
                 }
-            });
+            } else {
+                // TÍNH ĐIỂM DẠNG FULL TEST BÌNH THƯỜNG
+                let earnedReadingPoints = 0;
+                let earnedMathPoints = 0;
 
-            // 3. Tính điểm từng phần theo công thức SAT: 200 điểm sàn + tổng trọng số câu đúng
-            // Dùng Math.min(..., 800) để đảm bảo nếu admin cài đặt trọng số quá cao, điểm tối đa cũng không bao giờ vượt quá 800
-            const readingScore = Math.min(200 + earnedReadingPoints, 800);
-            const mathScore = Math.min(200 + earnedMathPoints, 800);
+                questions.forEach(q => {
+                    const userAns = answers[q._id] || "";
+                    if (userAns === q.correctAnswer) {
+                        const points = q.points || 0; 
+                        if (q.section === "Reading and Writing") {
+                            earnedReadingPoints += points;
+                        } else if (q.section === "Math") {
+                            earnedMathPoints += points;
+                        }
+                    }
+                });
 
-            // 4. Điểm tổng là sự kết hợp của 2 phần
-            const totalScore = readingScore + mathScore;
+                const readingScore = Math.min(200 + earnedReadingPoints, 800);
+                const mathScore = Math.min(200 + earnedMathPoints, 800);
+                const totalScore = readingScore + mathScore;
 
+                const res = await api.post(API_PATHS.RESULTS, {
+                    testId,
+                    isSectional: false,
+                    answers: formattedAnswers,
+                    score: totalScore,
+                    sectionBreakdown: { readingAndWriting: readingScore, math: mathScore }
+                });
 
-
-            const res = await api.post(API_PATHS.RESULTS, {    // Nộp bảng điểm và chi tiết bài làm cho BE
-                testId,                              // Mã bài thi
-                answers: formattedAnswers,           // Gửi array chứa các thông tin của từng câu ( id câu, chọn gì, đúng k )
-                score: totalScore,                               // kết quả tính được
-                sectionBreakdown: { readingAndWriting: readingScore, math: mathScore }    // FIXX: Tính được score là 1400 thì nó chia đổi cho math và verbal => Cách tính sai
-            });
-
-            if (res.status === 200 || res.status === 201) {
-                router.push("/review");                        // Gửi thành công thông tin thì chuyển sang trang review
+                if (res.status === 200 || res.status === 201) {
+                    router.push("/review");
+                }
             }
         } catch (err) {
             console.error(err);
             alert("Failed to submit test");
         }
     };
-
 
     // Dưới là các chốt chặn trc khi hiển thị giao diện làm bài
     if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><Loading /></div>;   // Nếu đanh load thì load animation
@@ -219,6 +258,11 @@ export default function TestEngine({ testId }: { testId: string }) {    // Lấy
                 setIsTimerHidden={setIsTimerHidden}
                 onToggleCalculator={() => setIsCalculatorOpen(!isCalculatorOpen)}       // Lật ngược lại bool bật tắt Calc
                 showCalculator={currentStage.section === "Math"}
+
+                buttonText={mode === "sectional" ? "Submit Module" : (currentStageIndex < 3 ? "Next Module" : "Submit Test")}
+                confirmTitle={mode === "sectional" ? "Submit Module" : (currentStageIndex < 3 ? "Next Module" : "Submit Full Test")}
+                confirmDescription={mode === "sectional" ? "Are you sure you want to grade this module now?" : "Are you sure you want to end this section?"}
+                            
             />
 
             <DesmosCalculator
@@ -237,20 +281,7 @@ export default function TestEngine({ testId }: { testId: string }) {    // Lấy
                 />
             </main>
 
-            <div className="fixed top-3 right-6 z[60px]">
-                <Popconfirm                             // Pop up confirm user có muốn submit khi ấn submit hay k, đề phòng lỡ thay
-                    title="Submit Test"
-                    description="Are you sure you want to end this section and submit your test?"
-                    onConfirm={handleSubmit}                 // confirm muốn nộp thì gọi hàm submit
-                    okText="Yes"
-                    cancelText="No"
-                    placement="bottomRight"
-                >
-                    <Button type="primary" danger>
-                        Submit Test
-                    </Button>
-                </Popconfirm>
-            </div>
+          
 
             {/** Đây là mục  để di chuyển giữa các câu, và là cả thanh ở dưới trang, có nút next prev 
              * Đang thiếu Tên: FIX

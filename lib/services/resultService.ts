@@ -50,10 +50,11 @@ export const resultService = {
 
         const results = await Result.find(query)
             .sort({ createdAt: -1 })
+            .populate('testId', 'title') 
             .populate({
                 path: 'answers.questionId',
                 model: 'Question',
-                select: 'questionText correctAnswer _id'
+                select: 'questionText correctAnswer _id imageUrl'
             });
 
         return { results };

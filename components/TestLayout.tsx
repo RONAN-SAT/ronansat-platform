@@ -12,6 +12,10 @@ interface TestHeaderProps {
     setIsTimerHidden: (hide: boolean) => void;
     isLastModule?: boolean;
     showCalculator?: boolean; 
+
+    buttonText?: string;
+    confirmTitle?: string;
+    confirmDescription?: string;
 }
 
 export function TestHeader({
@@ -22,7 +26,12 @@ export function TestHeader({
     setIsTimerHidden,
     onToggleCalculator,
     isLastModule,
-    showCalculator = true
+    showCalculator = true,
+
+    buttonText,
+    confirmTitle,
+    confirmDescription
+
 }: TestHeaderProps & { onToggleCalculator?: () => void }) {
 
     const formatTime = (seconds: number) => {
@@ -75,20 +84,24 @@ export function TestHeader({
                 </Button>
               )}
 
-                <Popconfirm 
-                    title={isLastModule ? "Submit Entire Test?" : "Finish This Module?"}
-                    description={isLastModule 
-                        ? "You are about to finish the test. You cannot go back to any module after this." 
-                        : "Once you move to the next module, you cannot return to the current questions."}
-                    onConfirm={onTimeUp} 
-                    okText="Yes, Move On"
-                    cancelText="No"
-                    placement="bottomRight"
-                >
-                    <Button type="primary" className="font-semibold px-6">
-                        {isLastModule ? "Submit Test" : "Next Module"}
-                    </Button>
-                </Popconfirm>
+           <Popconfirm 
+            title={confirmTitle || (isLastModule ? "Submit Entire Test?" : "Finish This Module?")}
+            description={confirmDescription || (isLastModule 
+                ? "You are about to finish the test. You cannot go back to any module after this." 
+                : "Once you move to the next module, you cannot return to the current questions.")}
+            onConfirm={onTimeUp} 
+            okText="Yes"
+            cancelText="No"
+            placement="bottomRight"
+        >
+            <Button 
+                type="primary" 
+                danger={buttonText === "Submit Module" || buttonText === "Submit Test" || isLastModule} 
+                className="font-semibold px-6"
+            >
+                {buttonText || (isLastModule ? "Submit Test" : "Next Module")}
+            </Button>
+        </Popconfirm>
             </div>
         </header>
     );

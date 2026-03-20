@@ -9,28 +9,34 @@ interface Test {
     sections: any[];
 }
 
-// Khai báo thêm các tham số mới cho thẻ TestCard
 interface TestCardProps {
     test: Test;
-    isSectional?: boolean;         // Có phải đang ở trang Sectional không? (Dấu ? nghĩa là không bắt buộc)
-    subjectFilter?: string;        // "reading" hoặc "math"
-    userResults?: any[];           // Danh sách điểm để kiểm tra xem đã làm chưa
+    isSectional?: boolean;
+    subjectFilter?: string;
+    userResults?: any[];
 }
 
 export default function TestCard({ test, isSectional = false, subjectFilter, userResults = [] }: TestCardProps) {
     const totalQuestions = test.sections?.reduce((acc, sec) => acc + sec.questionsCount, 0) || 0;
 
-    // --- LOGIC TÌM ĐIỂM CŨ (Dành riêng cho Sectional) ---
-    // Giả định trong database `userResults`, mỗi kết quả lưu: testId, subject, module, score
-    // Bạn cần điều chỉnh tên các trường (score, module...) cho khớp với schema Result của bạn.
+    // 1. Chuyển đổi tên môn học để khớp hoàn toàn với dữ liệu lưu trên Database
+    const formattedSectionName = subjectFilter === "reading" ? "Reading and Writing" : "Math";
+
+    // 2. TÌM KẾT QUẢ: Đã đổi tên biến thành `sectionalSubject` và `sectionalModule` cho chuẩn xác
     const getModuleResult = (moduleNumber: number) => {
         return userResults.find(
-            (r) => r.testId === test._id && r.subject === subjectFilter && r.module === moduleNumber
+            (r) => r.testId === test._id && r.sectionalSubject === formattedSectionName && r.sectionalModule === moduleNumber
         );
     };
 
     const mod1Result = isSectional ? getModuleResult(1) : null;
     const mod2Result = isSectional ? getModuleResult(2) : null;
+
+    // 3. TỰ ĐỘNG TÍNH ĐIỂM: Khắc phục lỗi điểm trống bằng cách đếm số câu có isCorrect = true
+    const getScore = (res: any) => {
+        if (res?.answers) return res.answers.filter((a: any) => a.isCorrect).length;
+        return res?.score || 0;
+    };
 
     return (
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:border-blue-200 transition-all group flex flex-col h-full">
@@ -55,34 +61,48 @@ export default function TestCard({ test, isSectional = false, subjectFilter, use
             </div>
 
             <div className="p-4 bg-slate-50 border-t border-slate-100 mt-auto">
-                {/* NẾU LÀ TRANG SECTIONAL -> HIỂN THỊ 2 NÚT */}
                 {isSectional ? (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3">
                         {/* Nút Module 1 */}
-                        <Link
-                            // Truyền tham số subject và module lên URL để TestEngine đọc được
-                            href={`/test/${test._id}?subject=${subjectFilter}&module=1`}
-                            className={`block w-full text-center font-medium py-2 px-4 rounded-lg border ${
-                                mod1Result ? "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200" : "bg-blue-600 text-white hover:bg-blue-700"
-                            }`}
-                        >
-                            {mod1Result ? `Retake Module 1 (Score: ${mod1Result.score})` : "Start Module 1"}
-                        </Link>
+                        <div className="relative group/btn">
+                            {mod1Result && (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-max whitespace-nowrap bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm border border-amber-600">
+                                    Previous Result: {getScore(mod1Result)} / {subjectFilter === "reading" ? 27 : 22}
+                                </div>
+                            )}
+                            <Link
+                                    href={`/test/${test._id}?section=${formattedSectionName}&module=1&mode=sectional`}                                className={`relative block w-full text-center font-medium py-2.5 px-4 rounded-lg border transition-all ${
+                                    mod1Result 
+                                        ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-300" 
+                                        : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md border-transparent"
+                                }`}
+                            >
+                                {mod1Result ? "Retake Module 1" : "Start Module 1"}
+                            </Link>
+                        </div>
 
                         {/* Nút Module 2 */}
-                        <Link
-                            href={`/test/${test._id}?subject=${subjectFilter}&module=2`}
-                            className={`block w-full text-center font-medium py-2 px-4 rounded-lg border ${
-                                mod2Result ? "bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200" : "bg-blue-600 text-white hover:bg-blue-700"
-                            }`}
-                        >
-                            {mod2Result ? `Retake Module 2 (Score: ${mod2Result.score})` : "Start Module 2"}
-                        </Link>
+                        <div className="relative group/btn mt-2">
+                            {mod2Result && (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-max whitespace-nowrap bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm border border-amber-600">
+                                    Previous Result: {getScore(mod2Result)} / {subjectFilter === "reading" ? 27 : 22}
+                                </div>
+                            )}
+                            <Link
+                                    href={`/test/${test._id}?section=${formattedSectionName}&module=2&mode=sectional`}                                className={`relative block w-full text-center font-medium py-2.5 px-4 rounded-lg border transition-all ${
+                                    mod2Result 
+                                        ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-300" 
+                                        : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md border-transparent"
+                                }`}
+                            >
+                                {mod2Result ? "Retake Module 2" : "Start Module 2"}
+                            </Link>
+                        </div>
                     </div>
                 ) : (
                     /* NẾU LÀ TRANG FULL-LENGTH BÌNH THƯỜNG -> HIỂN THỊ 1 NÚT NHƯ CŨ */
                     <Link
-                        href={`/test/${test._id}`}
+                        href={`/test/${test._id}?mode=full`}
                         className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
                     >
                         Start Practice

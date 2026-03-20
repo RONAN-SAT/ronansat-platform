@@ -1,14 +1,13 @@
 import { CheckCircle, XCircle, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 
-interface ReviewCardProps {              // Hợp đồng yêu cầu component cha phải cung cấp dữ liệu dưới
-    idx: number;        // index của câu hỏi 0 1 2...
-    ans: any;           // ans là 1 object chứa Hs chọn gì, kết quả đúng hay sai, toàn bộ thông tin của đề bài câu đó
-          // ans là 1 object chứa 1 object khác (Nested Object)
-    loadingExplanation: boolean;     //   loading 
-    expandedExplanation?: string;    //  Lời giải thích của câu đó, có ? nghĩa là optional (k phải câu nào cũng có)
-    isActiveChat: boolean;           // Biến check học sinh có đang chat không
-    onExpandExplanation: (questionId: string) => void;                    // Thẻ cha khi gọi thẻ con này sẽ truyền vào chỗ này id câu để hàm lấy explanation của câu đó
-    onToggleChat: (questionId: string, questionText: string) => void;     // truyền vào 2 biến này để thẻ tra xử lý bật tắt khung chat AI
+interface ReviewCardProps {
+    idx: number;
+    ans: any;
+    loadingExplanation: boolean;
+    expandedExplanation?: string;
+    isActiveChat: boolean;
+    onExpandExplanation: (questionId: string) => void;
+    onToggleChat: (questionId: string, questionText: string) => void;
 }
 
 export default function ReviewCard({
@@ -21,34 +20,34 @@ export default function ReviewCard({
     onToggleChat
 }: ReviewCardProps) {
 
-    const isCorrect = ans.isCorrect;   // Lấy trạng thái câu đúng hay sai
-    const q = ans.questionId;          // q = 1 object chứa bản thân dữ liệu câu hỏi, ví dụ như nội dung chữ, đáp án đúng
-                  // Thẻ cha sẽ truyền vào 1 object ở chỗ ans.questionId
+    const isCorrect = ans.isCorrect;
+    const q = ans.questionId;
+
+    // Định nghĩa màu sắc tùy theo việc làm đúng hay sai để giao diện đồng bộ, mượt mượt hơn
+    const bgClass = isCorrect ? "bg-emerald-50" : "bg-red-50";
+    const borderClass = isCorrect ? "border-emerald-100" : "border-red-100";
+    const hoverBgClass = isCorrect ? "hover:bg-emerald-100" : "hover:bg-red-100";
 
     return (  
- 
-        // Logic dưới khi chưa fix: câu đó đúng thì hiện kết quả cơ bản thôi, sai thì mở khóa 3 tính năng: Hiện đáp án đúng, chat AI, và lời giải chi tiết
-        // Đã fix: Làm đúng cũng được hỏi AI và lời giải 
-         
-        <div className={`rounded-lg border overflow-hidden ${isCorrect ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100"}`}>
+        <div className={`rounded-lg border overflow-hidden ${bgClass} ${borderClass}`}>
 
             {/* Answer Header */}
             <div className="flex items-start justify-between p-4">
                 <div className="flex items-start gap-3">
                     <div className={`w-8 h-8 rounded shrink-0 flex items-center justify-center font-bold text-white mt-0.5 ${isCorrect ? "bg-emerald-500" : "bg-red-500"}`}>
-                        {idx + 1}   {/** In ra đây là câu hỏi số mấy = index câu đó + 1 */}
+                        {idx + 1}
                     </div>
                     <div>
                         <p className="text-sm font-medium text-slate-900">
-                            Your answer: <span className="font-bold">{ans.userAnswer || "Omitted"}</span>     {/** Hiển thị ans của user, nếu chưa chọn thì in ra Omitted */}
+                            Your answer: <span className="font-bold">{ans.userAnswer || "Omitted"}</span>
                         </p>
-                        {!isCorrect && q && (    // Xử lý khi đáp án sai và lấy được data của câu hỏi (q) -> Nếu sai thì in ra đáp án đúng (q.correctAnswer)
+                        {!isCorrect && q && (
                             <p className="text-sm font-medium text-emerald-700 mt-1">
                                 Correct answer: <span className="font-bold">{q.correctAnswer}</span>    
                             </p>
                         )}
-                        {!isCorrect && q && (
-                            <p className="text-xs text-slate-500 mt-2 line-clamp-2">{q.questionText}</p>      // In cả nội dung của câu sai đó ra
+                        {q && (
+                            <p className="text-xs text-slate-500 mt-2 line-clamp-2">{q.questionText}</p>
                         )}
                     </div>
                 </div>
@@ -61,38 +60,50 @@ export default function ReviewCard({
                 </div>
             </div>
 
-            {/* Actions — wrong answers only */}
+            {/* Actions */}
             {q && (
                 <>
-                     {/** Nếu ấn vào nút expand thì lấy question id để tìm Explanation *
-                          nếu đang load explanation thì vô hiệu hóa nút vì chưa lấy được data explanation về       */}
                     <button
                         onClick={() => onExpandExplanation(q._id)}   
                         disabled={loadingExplanation}                  
-                        className="w-full flex items-center justify-between px-4 py-2.5 bg-red-50 border-t border-red-100 text-sm font-medium text-blue-700 hover:bg-red-100 transition-colors"
+                        className={`w-full flex items-center justify-between px-4 py-2.5 ${bgClass} border-t ${borderClass} text-sm font-medium text-blue-700 ${hoverBgClass} transition-colors`}
                     >
-                        <span>{loadingExplanation ? "Loading..." : expandedExplanation ? "Hide Explanation" : "View Explanation"}</span>     {/** Thay đổi UI của nút, nếu đang load thì hiện Loading, nếu đã expand explanation (đã mở giải thích rồi) thì nội dung nút thành Hide, nếu chưa thì nội dung nút là View explanation */}
-                        {expandedExplanation ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}                       {/** Thay đổi icon mũi tên lên xuống tùy đang đóng hay mở explanation */}
+                        <span>{loadingExplanation ? "Loading..." : expandedExplanation ? "Hide Explanation" : "View Explanation"}</span>
+                        {expandedExplanation ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
 
                     {/* Explanation Body */}
                     {expandedExplanation && (
-                        <div className="px-4 py-3 bg-red-50 border-t border-red-100 text-sm text-slate-700 animate-in slide-in-from-top-1 duration-150">
-                            <span className="font-bold text-slate-800">Explanation: </span>    {/** Nếu đang Expand thì lấy lời giải thích để In ra màn hình */}
-                            {expandedExplanation}
+                        <div className={`px-4 py-4 ${bgClass} border-t ${borderClass} text-sm text-slate-700 animate-in slide-in-from-top-1 duration-150 flex flex-col gap-4`}>
+                            
+                            {/* 1. HIỂN THỊ ẢNH NẾU CÂU HỎI CÓ ẢNH (Đã sửa từ q.image thành q.imageUrl) */}
+                            {q.imageUrl && (
+                                <div className="w-full bg-white p-2 rounded-lg border border-slate-200 shadow-sm flex justify-center">
+                                    <img 
+                                        src={q.imageUrl} 
+                                        alt="Question graphic" 
+                                        className="max-w-full max-h-[400px] object-contain rounded"
+                                        loading="lazy"
+                                    />
+                                </div>
+                            )}
+
+                            {/* 2. HIỂN THỊ FULL CÂU HỎI */}
+                            <div className="bg-white p-3 rounded border border-slate-200">
+                                <span className="font-bold text-slate-800 block mb-1">Full Question:</span>
+                                <p className="whitespace-pre-wrap text-slate-600">{q.questionText}</p>
+                            </div>
+
+                            {/* 3. HIỂN THỊ LỜI GIẢI CHI TIẾT */}
+                            <div className="bg-white p-3 rounded border border-slate-200">
+                                <span className="font-bold text-slate-800">Explanation: </span>
+                                <div className="mt-1 whitespace-pre-wrap">{expandedExplanation}</div>
+                            </div>
                         </div>
                     )}
 
                     {/* AI Tutor Button */}
-                    <div className="px-4 py-2.5 border-t border-red-100 flex">
-
-                        {/** Concern: Mỗi lần user ấn vào nút này là lại gửi đi thông tin câu hỏi và nội dung câu 1 lần => Khi đóng cũng gửi => Thừa
-                         *  Thực tế: Nó chỉ là component con có nghĩa vụ gửi 2 thông tin cho component cha khi gọi thẻ này, component cha sẽ có logic only sử dụng 2 thông tin này để gửi AI khi mở thanh chat, khi đóng  thì sẽ lấy 2 thông tin này làm tín hiệu tắt chat và k dùng chúng
-                         
-                         hàm onToggleChat gửi nội dung câu hỏi (questionText) k phải để hỏi AI mà để display lên đầu khung chat với AI
-                         
-                         
-                         */}
+                    <div className={`px-4 py-2.5 border-t ${borderClass} flex`}>
                         <button                
                             onClick={() => onToggleChat(q._id, q.questionText)}     
                             className={`text-sm font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors ${isActiveChat
@@ -101,7 +112,7 @@ export default function ReviewCard({
                                 }`}
                         >
                             <Sparkles className="w-3.5 h-3.5" />
-                            {isActiveChat ? "Tutoring this" : "Ask AI Tutor"}    {/** Kiểm tra khung chat AI có đang mở hay không, nếu có thì đổi sang text 1, k thì text 2 */}
+                            {isActiveChat ? "Tutoring this" : "Ask AI Tutor"}
                         </button>
                     </div>
                 </>
