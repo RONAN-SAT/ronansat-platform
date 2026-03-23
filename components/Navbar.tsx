@@ -7,7 +7,7 @@
 "use client";
 
 import Image from "next/image";
-import logo from "@/assets/sat-png-4.png";
+import logo from "@/assets/logo.png";
 import { useSession, signOut } from "next-auth/react";   // signOut để signOut -> Hủy session đăng nhập, và điều hướng về trạng thái chưa đăng nhập
 import Link from "next/link";
 import { LogOut, Settings, BarChart2, Trophy, Target, BookOpen  } from "lucide-react";
@@ -35,9 +35,8 @@ export default function Navbar() {
                 <div className="flex justify-between h-16">
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2">
-                            <Image src={logo} alt="SATTOT Logo" width={32} height={32} className="rounded object-contain" />
                             <span className="font-bold text-xl text-slate-900 hover:text-blue-600">
-                                SATTOT           {/** Bấm vào Logo và tên thì đưa user về trang chủ */}
+                                Ronan SAT           {/** Bấm vào Logo và tên thì đưa user về trang chủ */}
                             </span>
                         </Link>
                     </div>

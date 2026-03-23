@@ -3,7 +3,7 @@
 "use client";
 
 import Image from "next/image";                     // Công cụ hiển thị ảnh (lazy loading,...) giúp hiển thị ảnh mượt
-import logo from "@/assets/sat-png-4.png";          //  ảnh logo
+import logo from "@/assets/logo.png";          //  ảnh logo
 import { useSession} from "next-auth/react";        // Thông tin phiên đăng nhập
 import Link from "next/link";                       // Công cụ tạo đường link -> Giúp bấm link mà k chớp màn hìn or tải lại web từ đầu
 import { useEffect, useState } from "react";        // Bộ nhớ qly từng component
@@ -142,7 +142,6 @@ export default function Dashboard() {
       <div className="min-h-screen bg-slate-50 flex flex-col">
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Image src={logo} alt="SATTOT Logo" width={32} height={32} className="rounded object-contain" />
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Ronan SAT</h1>
           </div>
           <div className="space-x-4">
