@@ -3,6 +3,7 @@ import AuthProvider from "@/components/AuthProvider";     // Quản lý đăng n
 import Navbar from "@/components/Navbar";                 // Thanh điều hướng
 import { Geist, Geist_Mono } from "next/font/google"; 
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";      // THÊM DÒNG NÀY: Import thư viện Vercel Analytics
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,8 @@ export default function RootLayout({
           <Navbar />      {/**Thanh điều hướng đặt trên cùng */}
           {children}
         </AuthProvider>
+
+        <Analytics />
       </body>
     </html>
   );
