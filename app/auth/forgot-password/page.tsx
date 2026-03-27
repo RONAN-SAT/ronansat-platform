@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
 
     useEffect(() => {
             if (status === "authenticated") {
-                router.push("/");
+                router.push("/full-length");
             }
         }, [status, router]);
 
@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
     // HIỆU ỨNG CHẶN CỬA: Nếu phát hiện đã đăng nhập (authenticated), lập tức đá về trang chủ ("/")
     useEffect(() => {
         if (status === "authenticated") {
-            router.push("/");
+            router.push("/full-length");
         }
     }, [status, router]);
 

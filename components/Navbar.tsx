@@ -38,7 +38,7 @@ export default function Navbar() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     <div className="flex items-center gap-2">
-                        <Link href="/" className="flex items-center gap-2">
+                        <Link href="/full-length" className="flex items-center gap-2">
                             <span className="font-bold text-xl text-slate-900 hover:text-blue-600">
                                 Ronan SAT           {/** Bấm vào Logo và tên thì đưa user về trang chủ */}
                             </span>
@@ -61,8 +61,8 @@ export default function Navbar() {
 
                         {/* Nút Full-length tests (Trang chủ hiện tại) */}
                         <Link
-                            href="/"
-                            className={`flex items-center gap-1 text-sm font-medium hover:text-blue-600 ${pathname === "/" ? "text-blue-600" : "text-slate-600"}`}
+                            href="/full-length"
+                            className={`flex items-center gap-1 text-sm font-medium hover:text-blue-600 ${pathname === "/full-length" ? "text-blue-600" : "text-slate-600"}`}
                         >
                             <BookOpen className="w-4 h-4" /> {/* Đừng quên import BookOpen từ lucide-react */}
                             Full-length tests

@@ -15,7 +15,7 @@ export default function AuthPage() {
     const { data: session, status } = useSession(); // Lấy trạng thái xem đã đăng nhập chưa, nếu rồi thì đá về trang chủ
     useEffect(() => {
         if (status === "authenticated") {
-            router.push("/");
+            router.push("/full-length");
         }
     }, [status, router]);
 
@@ -53,7 +53,7 @@ export default function AuthPage() {
                     setIsError(true);
                     setError(res.error);
                 } else {
-                    router.push("/");    // Nếu k có lỗi thì route user về trang chủ
+                    router.push("/full-length");    // Nếu k có lỗi thì route user về trang chủ
                     router.refresh();    // Ấn refresh: Báo server không dùng bản nháp (chứa thông tin trang login) nữa mà F5 tải lại thông tin của trang chủ
                 }
             } else {     // Tức là đang ở trang sign up
@@ -65,7 +65,7 @@ export default function AuthPage() {
                     setIsError(false);  // Báo rằng đây KHÔNG PHẢI lỗi (để hiển thị nền xanh)
                     setError("Register successfully! Redirecting..."); // Set thông báo thành công
                     await signIn("credentials", { email, password, redirect: false });
-                    router.push("/");
+                    router.push("/full-length");
                     router.refresh();
                 } else {        // BE báo lỗi
                     setIsError(true);

@@ -47,7 +47,7 @@ export default function TestEngine({ testId }: { testId: string }) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
                 <h1 className="text-2xl font-bold mb-4 text-slate-900">No questions found!</h1>
-                <button onClick={() => router.push('/')} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Return to Dashboard</button>
+                <button onClick={() => router.push('/full-length')} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Return to Dashboard</button>
             </div>
         );
     }
