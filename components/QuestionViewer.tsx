@@ -125,7 +125,7 @@ export default function QuestionViewer({
                         <div className="flex-1 bg-slate-100 flex items-center justify-between px-3">
                             <button
                                 onClick={() => onToggleFlag(question._id)}
-                                className={`flex items-center gap-1.5 text-[13px] shrink-0 select-none transition-all
+                                className={`cursor-pointer flex items-center gap-1.5 text-[13px] shrink-0 select-none transition-all
                                     ${isFlagged
                                         ? "font-semibold text-[#1e3a5f] underline underline-offset-2 hover:font-medium hover:no-underline"
                                         : "font-medium text-slate-700 hover:font-semibold hover:text-[#1e3a5f] hover:underline hover:underline-offset-2"
@@ -147,7 +147,7 @@ export default function QuestionViewer({
                                 onClick={() => setShowElimination(prev => !prev)}
                                 title={showElimination ? "Tắt Process of Elimination" : "Bật Process of Elimination"}
                                 className={`
-                                    relative shrink-0 w-[26px] h-[26px] flex items-center justify-center rounded-sm border font-bold transition-colors select-none
+                                    cursor-pointer relative shrink-0 w-[26px] h-[26px] flex items-center justify-center rounded-sm border font-bold transition-colors select-none
                                     ${showElimination
                                         ? "bg-[#2B579A] border-[#2B579A] text-white"
                                         : "bg-white border-slate-300 text-slate-700"
@@ -205,15 +205,14 @@ export default function QuestionViewer({
                                 return (
                                     <div key={i} className="flex items-center gap-3">
 
-                                        {/* ── KHUNG ĐÁP ÁN ── */}
                                         <div
                                             className={`
-                                                relative flex-1 flex items-center gap-3 pl-4 pr-4 py-[10px] border rounded-xl transition-all
+                                                relative flex-1 flex items-center gap-3 pl-4 pr-4 py-[10px] rounded-xl transition-all
                                                 ${isCrossed
-                                                    ? "border-slate-200 bg-slate-50 cursor-default"
+                                                    ? "ring-1 ring-inset ring-slate-200 bg-slate-50 cursor-default"
                                                     : isSelected
-                                                        ? "border-[#3056D3] border-[2px] bg-white cursor-pointer"
-                                                        : "border-slate-400 bg-white hover:border-slate-600 cursor-pointer"
+                                                        ? "ring-2 ring-inset ring-[#3056D3] bg-white cursor-pointer"
+                                                        : "ring-1 ring-inset ring-slate-400 bg-white hover:ring-slate-600 cursor-pointer"
                                                 }
                                             `}
                                             onClick={() => !isCrossed && onAnswerSelect(question._id, choice)}
@@ -246,7 +245,7 @@ export default function QuestionViewer({
                                             <button
                                                 onClick={(e) => toggleCrossOut(e, choice)}
                                                 title={isCrossed ? `Hoàn tác loại trừ đáp án ${label}` : `Loại trừ đáp án ${label}`}
-                                                className="shrink-0 transition-all flex items-center justify-center w-[30px]"
+                                                className="cursor-pointer shrink-0 transition-all flex items-center justify-center w-[30px]"
                                             >
                                                 {isCrossed ? (
                                                     <span className="text-[13px] font-semibold text-slate-600 underline hover:no-underline whitespace-nowrap">

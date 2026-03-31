@@ -114,7 +114,7 @@ export default function Navbar() {
                         </span>
                         <button
                             onClick={() => signOut({ callbackUrl: '/auth' })}   // của lda callbackUrl là / nhưng fix thành auth để đưa tới trang login
-                            className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full"
+                            className="cursor-pointer p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full"
                             title="Log out"
                         >
                             <LogOut className="w-5 h-5" />

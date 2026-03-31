@@ -43,7 +43,7 @@ export default function TestLibrary({
                                         setSelectedPeriod(period); 
                                         setPage(1); // Cực kì quan trọng: Reset về trang 1 khi đổi bộ lọc
                                     }}
-                                    className={`text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                                    className={`cursor-pointer text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                                         selectedPeriod === period 
                                             ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm" // Nổi bật mục đang chọn
                                             : "text-slate-600 hover:bg-slate-50 border border-transparent"
@@ -70,7 +70,7 @@ export default function TestLibrary({
                                 id="sort-tests"
                                 value={sortOption}    // Hiển thị ra màn hình lựa chọn Sort hiện tại
                                 onChange={(e) => { setSortOption(e.target.value); setPage(1); }}    // Cập nhật Sort và về trang 1
-                                className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none"
+                                className="cursor-pointer bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none"
                             >
                                 <option value="newest">Newest First</option>
                                 <option value="oldest">Oldest First</option>
@@ -102,7 +102,7 @@ export default function TestLibrary({
                                     <button
                                         onClick={() => setPage((p: number) => Math.max(1, p - 1))}     // Lùi trang
                                         disabled={page === 1}                                // Chặn lùi nếu ở trang 1 
-                                        className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="cursor-pointer px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         Previous
                                     </button>

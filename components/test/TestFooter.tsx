@@ -80,7 +80,7 @@ export default function TestFooter({
                                             setIsGridOpen(false); 
                                         }}
                                         className={`
-                                            relative w-full aspect-square flex items-center justify-center rounded text-sm font-semibold transition-all border-2 
+                                            cursor-pointer relative w-full aspect-square flex items-center justify-center rounded text-sm font-semibold transition-all border-2 
                                             ${isCurrent ? 'bg-slate-900 border-slate-900 text-white transform scale-105 z-10' :
                                             isAnswered ? 'bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100 hover:border-blue-300' :
                                             'bg-white border-slate-200 text-slate-600 hover:border-slate-400'}
@@ -124,7 +124,7 @@ export default function TestFooter({
                     {/* Nút Grid màu đen giống ảnh, thêm bo góc rounded-md, đổi icon thành ChevronUp */}
                     <button
                         onClick={() => setIsGridOpen(!isGridOpen)}
-                        className="font-bold text-white bg-[#1a1c23] hover:bg-black transition-colors px-4 py-2 rounded-md flex items-center shadow-sm text-sm"
+                        className="cursor-pointer font-bold text-white bg-[#1a1c23] hover:bg-black transition-colors px-4 py-2 rounded-md flex items-center shadow-sm text-sm"
                     >
                         <span>Question {currentIndex + 1} of {totalQuestions}</span>
                         <ChevronUp className={`w-4 h-4 transition-transform ${isGridOpen ? 'rotate-180' : ''} inline-block ml-2`} />
@@ -136,7 +136,7 @@ export default function TestFooter({
                     {currentIndex > 0 && (
                         <button
                             onClick={onPrev}
-                            className="bg-[#3b5bd9] hover:bg-[#2e4bb5] text-white font-semibold py-1.5 px-6 rounded-full transition-colors text-sm"
+                            className="cursor-pointer bg-[#3b5bd9] hover:bg-[#2e4bb5] text-white font-semibold py-1.5 px-6 rounded-full transition-colors text-sm"
                         >
                             Back
                         </button>
@@ -146,7 +146,7 @@ export default function TestFooter({
                     {currentIndex < totalQuestions - 1 && (
                         <button
                             onClick={onNext}
-                            className="bg-[#3b5bd9] hover:bg-[#2e4bb5] text-white font-semibold py-1.5 px-6 rounded-full transition-colors text-sm"
+                            className="cursor-pointer bg-[#3b5bd9] hover:bg-[#2e4bb5] text-white font-semibold py-1.5 px-6 rounded-full transition-colors text-sm"
                         >
                             Next
                         </button>

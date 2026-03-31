@@ -211,7 +211,7 @@ function ReviewContent() {
                             <button
                                 key={res._id}
                                 onClick={() => setActiveTestId(res._id)}
-                                className={`w-full p-3 text-left rounded-xl transition-all group flex items-start justify-between gap-2 ${
+                                className={`cursor-pointer w-full p-3 text-left rounded-xl transition-all group flex items-start justify-between gap-2 ${
                                     isActive
                                         ? "bg-blue-50 border-2 border-blue-200"
                                         : "hover:bg-slate-50 border-2 border-transparent"

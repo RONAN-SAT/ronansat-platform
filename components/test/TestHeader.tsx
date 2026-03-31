@@ -3,6 +3,7 @@
 // Đã thay đổi import: Xóa ChevronLeft/ChevronRight và thêm ChevronUp cho nút Grid
 import { EyeOff, Eye, Calculator } from "lucide-react";
 import { Button, Popconfirm } from "antd";
+import { CircleX } from "lucide-react"; // Thêm CircleX vào đây
 
 interface TestHeaderProps {
     sectionName: string;
@@ -16,6 +17,7 @@ interface TestHeaderProps {
     confirmTitle?: string;
     confirmDescription?: string;
     onToggleCalculator?: () => void; // Gộp chung vào interface cho gọn
+    onLeave: () => void; // THÊM DÒNG NÀY
 }
 
 export default function TestHeader({
@@ -29,7 +31,8 @@ export default function TestHeader({
     showCalculator = true,
     buttonText,
     confirmTitle,
-    confirmDescription
+    confirmDescription,
+    onLeave
 }: TestHeaderProps) {
 
     const formatTime = (seconds: number) => {
@@ -70,45 +73,63 @@ export default function TestHeader({
                 </div>
             </div>
 
-            <div className="flex-1 flex justify-end items-center gap-4">
-              {showCalculator && (
-                <Button
-                    onClick={onToggleCalculator}
-                    icon={<Calculator className="w-4 h-4" />}
-                    type="default"
-                    className="flex items-center rounded-full"
-                >
-                    <span className="hidden sm:inline">Calculator</span>
-                </Button>
-              )}
+           <div className="flex-1 flex justify-end items-center gap-4">
+    {/* NÚT CALCULATOR ĐÃ ĐƯỢC SỬA LẠI */}
+    {showCalculator && (
+        <button
+            onClick={onToggleCalculator}
+            type="button"
+            title="Calculator" // Thêm title để khi hơ chuột vào sẽ hiện chữ "Calculator" nhỏ xíu (tooltip mặc định)
+            className="cursor-pointer p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors flex items-center justify-center outline-none"
+        >
+            <Calculator className="w-5 h-5" /> {/* Tăng size lên w-5 h-5 cho bằng với nút X bên dưới */}
+        </button>
+    )}
 
-           <Popconfirm 
-                title={confirmTitle || (isLastModule ? "Submit Entire Test?" : "Finish This Module?")}
-                description={confirmDescription || (isLastModule 
-                    ? "You are about to finish the test. You cannot go back to any module after this." 
-                    : "Once you move to the next module, you cannot return to the current questions.")}
-                onConfirm={onTimeUp} 
-                okText="Yes"
-                cancelText="No"
-                placement="bottomRight"
-            >
-                <Button 
-                    // Đổi từ "primary" sang "default" để nút không bị đổ kín màu nền
-                    type="default" 
-                    danger={buttonText === "Submit Module" || buttonText === "Submit Test" || isLastModule} 
-                    // Thay thế className cũ để áp dụng đúng màu và độ dày viền của ảnh
-                    className={`
-                        rounded-full px-8 h-10 font-semibold transition-all border-2
-                        ${(buttonText === "Submit Module" || buttonText === "Submit Test" || isLastModule)
-                            ? "!border-[#fb2a57] !text-[#fb2a57] hover:!bg-[#fb2a57]/10 bg-transparent" 
-                            : "" // Nếu là nút Next Module bình thường thì giữ nguyên style mặc định
-                        }
-                    `}
-                >
-                    {buttonText || (isLastModule ? "Submit Test" : "Next Module")}
-                </Button>
-            </Popconfirm>
-            </div>
+    {/* NÚT SUBMIT / NEXT MODULE GIỮ NGUYÊN */}
+    <Popconfirm 
+        title={confirmTitle || (isLastModule ? "Submit Entire Test?" : "Finish This Module?")}
+        description={confirmDescription || (isLastModule 
+            ? "You are about to finish the test. You cannot go back to any module after this." 
+            : "Once you move to the next module, you cannot return to the current questions.")}
+        onConfirm={onTimeUp} 
+        okText="Yes"
+        cancelText="No"
+        placement="bottomRight"
+    >
+        <Button 
+            type="default" 
+            danger={buttonText === "Submit Module" || buttonText === "Submit Test" || isLastModule} 
+            className={`
+                rounded-full px-8 h-10 font-semibold transition-all border-2
+                ${(buttonText === "Submit Module" || buttonText === "Submit Test" || isLastModule)
+                    ? "!border-[#fb2a57] !text-[#fb2a57] hover:!bg-[#fb2a57]/10 bg-transparent" 
+                    : "" 
+                }
+            `}
+        >
+            {buttonText || (isLastModule ? "Submit Test" : "Next Module")}
+        </Button>
+    </Popconfirm>
+
+    {/* NÚT LEAVE EXAM GIỮ NGUYÊN */}
+    <Popconfirm
+        title="Leave Exam?"
+        description="Are you sure you want to leave? Your progress will not be saved."
+        onConfirm={onLeave}
+        okText="Leave"
+        cancelText="Stay"
+        placement="bottomRight"
+        okButtonProps={{ danger: true }}
+    >
+        <button 
+            type="button" 
+            className="cursor-pointer p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors flex items-center justify-center outline-none"
+        >
+            <CircleX className="w-5 h-5" />
+        </button>
+    </Popconfirm>
+</div>
 
             {/* ĐƯỜNG PHÂN CÁCH TRÊN (DƯỚI TOP BAR) */}
             <div 
