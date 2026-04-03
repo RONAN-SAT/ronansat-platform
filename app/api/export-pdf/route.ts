@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
+
 
 import { authOptions } from "@/lib/authOptions";
 import dbConnect from "@/lib/mongodb";
@@ -96,9 +98,10 @@ export async function GET(req: NextRequest) {
       sectionName,
     });
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+   browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
+      headless: true, // Ép trình duyệt luôn chạy ngầm
     });
 
     const page = await browser.newPage();
