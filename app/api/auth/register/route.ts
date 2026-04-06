@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       email,
       password: hashedPassword,
       name: name.trim(),
-      role: "user",
+      role: "STUDENT",
     });
 
     return NextResponse.json(

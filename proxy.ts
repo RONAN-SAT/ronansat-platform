@@ -1,34 +1,32 @@
 import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import type { NextAuthMiddlewareOptions } from "next-auth/middleware";
+import type { NextRequest } from "next/server";
+
+const authOptions: NextAuthMiddlewareOptions = {
+  callbacks: {
+    authorized: ({ req, token }) => {
+      const pathname = req.nextUrl.pathname;
+
+      if (pathname.startsWith("/parent")) {
+        return token?.role === "PARENT" || token?.role === "ADMIN";
+      }
+
+      if (pathname.startsWith("/admin")) {
+        return token?.role === "ADMIN";
+      }
+
+      return !!token;
+    },
+  },
+};
 
 export default withAuth(
-    // `withAuth` augments your `Request` with the user's token.
-    function proxy(req) {
-        const token = req.nextauth.token;
-
-        // Check if user is accessing an admin route
-        if (req.nextUrl.pathname.startsWith("/admin")) {
-            // If they are not an admin, redirect them to the home page
-            if (token?.role !== "admin") {
-                return NextResponse.redirect(new URL("/", req.url));
-            }
-        }
-    },
-    {
-        callbacks: {
-            // By default, this callback determines if the proxy body should even execute.
-            // Returning `!!token` ensures that the proxy forces authentication for the 
-            // routes defined in the `matcher` array below. Unauthenticated users get redirected to `/auth`.
-            authorized: ({ token }) => !!token,
-        },
-    }
+  function proxy(_req: NextRequest) {
+    return;
+  },
+  authOptions
 );
 
-// Apply proxy to these specific routes
 export const config = {
-    matcher: [
-        "/admin/:path*",
-        "/review/:path*",
-        "/test/:path*"
-    ],
+  matcher: ["/parent/:path*", "/admin/:path*", "/settings/:path*"],
 };

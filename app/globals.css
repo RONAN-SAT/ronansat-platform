@@ -2,9 +2,9 @@
 @import "katex/dist/katex.min.css";
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
-  
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+
   --color-background: #ffffff;
   --color-foreground: #0f172a;
   --color-muted: #f8fafc;
@@ -18,6 +18,16 @@
   --color-border: #e2e8f0;
   --color-card: #ffffff;
   --color-card-foreground: #0f172a;
+}
+
+html,
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+body {
+  font-family: var(--font-sans);
 }
 
 @keyframes marquee {
@@ -35,6 +45,105 @@
 
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+
+@keyframes quote-loader-ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0.75);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.62;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(9.5);
+    opacity: 0;
+  }
+}
+
+@keyframes quote-loader-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes quote-loader-fade-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.test-entry-loader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='%23000000' fill-opacity='0.2'%3E%3Ccircle cx='22' cy='28' r='1'/%3E%3Ccircle cx='73' cy='55' r='1'/%3E%3Ccircle cx='128' cy='44' r='1'/%3E%3Ccircle cx='154' cy='98' r='1'/%3E%3Ccircle cx='44' cy='122' r='1'/%3E%3Ccircle cx='95' cy='145' r='1'/%3E%3Ccircle cx='142' cy='156' r='1'/%3E%3Ccircle cx='18' cy='164' r='1'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+.quote-ripple-anchor {
+  min-width: min(100%, 34rem);
+  min-height: 15rem;
+}
+
+.loading-ripple {
+  position: absolute;
+  top: var(--ripple-origin-y);
+  left: var(--ripple-origin-x);
+  width: min(16rem, 32vw);
+  height: min(16rem, 32vw);
+  border-radius: 9999px;
+  border: 3px solid rgba(34, 34, 34, 0.42);
+  box-shadow:
+    0 0 52px rgba(34, 34, 34, 0.24),
+    0 0 148px rgba(34, 34, 34, 0.16),
+    inset 0 0 22px rgba(34, 34, 34, 0.1);
+  filter: blur(1.2px);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.75);
+  animation: quote-loader-ripple 4.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  will-change: transform, opacity;
+}
+
+.loading-ripple-delay-0 {
+  animation-delay: 0s;
+}
+
+.loading-ripple-delay-1 {
+  animation-delay: 1.6s;
+}
+
+.loading-ripple-delay-2 {
+  animation-delay: 3.2s;
+}
+
+.quote-fade-enter {
+  animation: quote-loader-fade-in 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.quote-fade-exit {
+  animation: quote-loader-fade-out 420ms cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+.quote-text {
+  font-family:
+    "SF Pro Display",
+    "SF Pro Text",
+    "Helvetica Neue",
+    "Arial",
+    sans-serif;
 }
 
 button:not(:disabled),

@@ -33,7 +33,7 @@
         async createQuestion(req: Request) {
             try {
                 const session = await getServerSession(authOptions);           // lấy session đăng nhập
-                if (!session || session.user.role !== "admin") {               // Nếu chưa đăng nhập hoặc role k phải admin => Error
+                if (!session || session.user.role !== "ADMIN") {               // Nếu chưa đăng nhập hoặc role k phải admin => Error
                     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
                 }
 

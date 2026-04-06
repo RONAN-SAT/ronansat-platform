@@ -1,54 +1,41 @@
-// Tạo ra setting page cho phép 
-// 1. Thay đổi tên
-// 2. Thay đổi pass
-"use client";   // Trang này có tính  tương tác, chạy trên trang user
+// Táº¡o ra setting page cho phÃ©p 
+// 1. Thay Ä‘á»•i tÃªn
+// 2. Thay Ä‘á»•i pass
+"use client";
 
-import { useSession } from "next-auth/react";    // Lấy các thông tin lần đăng nhập này của user
-import { useState, useEffect } from "react";     // quản lý dữ liệu
-import { User, Save, CheckCircle, Lock } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { User, Save, CheckCircle, Lock, TriangleAlert } from "lucide-react";
 import Loading from "@/components/Loading";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
 
 export default function SettingsPage() {
-
-    // useSession() là công cụ trả về thông in session login
-    // lấy về data: session -> Trả về thông tin cá nhân(tên và email) nếu đăng nhập rồi, chưa thì rỗng
-    // status là trạng thái login hiện tại: loading, authenticated (login rồi), unauthenticated (chưa login)
     const { data: session, status, update } = useSession();
 
-
-    // NextJS tải dữ liệu theo 2 step: Bước 1: Server side -> Bước 2: Client side
-    // Nếu ở bước 1, server mặc định vẽ màu trắng nhưng đến bước client lại có customization là thích màu đen thì sẽ bị chuyển chớp từ trắng thành đen -> Mất thẩm mỹ
-    // mount là thứ ép NextJS đợi mọi thứ chạy hết trên máy tính (vd hiển thị khung HTML) nhưng không khởi tạo các phần của giao diện mang tính cá nhân hóa -> Khung được gửi tới trình duyệt, lắp xong xuôi -> setMounted(true) -> Mới hiển thị component mang tính cá nhân hóa ( vd: có màu đen)
     const [mounted, setMounted] = useState(false);
 
-    // Thông tin cá nhân
-    const [name, setName] = useState("");               // name mình nhập
-    const [isSaving, setIsSaving] = useState(false);    // trạng thái có đang loading không để làm mờ nút bấm
-    const [message, setMessage] = useState("");         // message báo user thành công hay thất bại
+    const [name, setName] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const [message, setMessage] = useState("");
 
-    // Password 
-    const [currentPassword, setCurrentPassword] = useState("");     // Quản lý ô nhập mật khẩu hiện tại
-    const [newPassword, setNewPassword] = useState("");             // pass mới
-    const [confirmPassword, setConfirmPassword] = useState("");     // ô xác nhận pass mới
-    const [isPasswordSaving, setIsPasswordSaving] = useState(false);    // Kiểm tra xem có đang lưu mật khẩu không, nếu có thì không cho gửi yêu cầu reset pass nữa tránh ycau rác
-    const [passwordMessage, setPasswordMessage] = useState("");         // Hiển thị thông báo trạng thái reset pass
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isPasswordSaving, setIsPasswordSaving] = useState(false);
+    const [passwordMessage, setPasswordMessage] = useState("");
 
     useEffect(() => {
-        setMounted(true);               // Đánh dấu rằng web đã được tải  lên xong xuôi -> Sẵn sàng hoạt  động
-        if (session?.user?.name) {      // Kiểm tra từ ngoài vào trong: từ session tới user tới name, phải tồn tại full tránh gây sập web
-            setName(session.user.name);    // nếu có name -> Điền ngay name vào ô name, k phải nhập lại
-        } 
-    }, [session]);     // [session] là dependency array -> Phụ thuộc vào biến session -> Nó thay đổi cái là hàm này chạy -> Lấy tên điền vào ô name luôn
-                       // Ví dụ giây đầu, session đang undefined vì máy đang hỏi máy chủ anh này đăng nhập chưa -> 2s sau đăng nhập -> biến session bị thay đổi và có tên => Điền ngay tên và ô name
-  
-    // Trc khi tới ô đổi tên phải check xem có quyền k  
+        setMounted(true);
+        if (session?.user?.name) {
+            setName(session.user.name);
+        }
+    }, [session]);
 
-    if (status === "loading" || !mounted) { // Nếu status là đang load thì chờ và hiện animation load
+    if (status === "loading" || !mounted) {
         return <Loading />;
     }
-    //Nếu chưa login => Yêu cầu login
+
     if (status === "unauthenticated" || !session) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50 border-t border-slate-200">
@@ -58,70 +45,70 @@ export default function SettingsPage() {
             </div>
         );
     }
- 
 
-    // Hàm này hoạt động khi gõ tên xong và ấn Save Profile
-    const handleUpdateProfile = async (e: React.FormEvent) => {    
+    const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSaving(true);    
+        setIsSaving(true);
         setMessage("");
 
         try {
-            const res = await api.put(API_PATHS.USER_SETTINGS, { name });  // name là tắt cho name: name   gửi đi yêu cầu put thay đổi biến name
+            const res = await api.put(API_PATHS.USER_SETTINGS, { name });
 
-            if (res.status === 200) {           
-                setMessage("Profile updated successfully!");    // update thành công name mới lên DB nhưng session hiện tại vẫn có name cũ
-                await update({ name });                         // update là của useSession -> update name mới cho session 
+            if (res.status === 200) {
+                setMessage("Profile updated successfully!");
+                await update({ name });
             } else {
                 setMessage(`Error: ${res.data.error || "Failed to update profile"}`);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setMessage(`Error: ${err.response?.data?.error || "Network error. Could not update profile."}`);
+            const error = err as { response?: { data?: { error?: string } } };
+            setMessage(`Error: ${error.response?.data?.error || "Network error. Could not update profile."}`);
         } finally {
-            setIsSaving(false);   // Tắt chế độ đang lưu để trả lại function cho nút Save Pro
+            setIsSaving(false);
         }
     };
 
-    // Hàm này cũng ktra update password nhưng chỉ là FE, Ktra sơ sơ bước đầu
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Lỗi pass ở new và confirm k match
         if (newPassword !== confirmPassword) {
             setPasswordMessage("Error: New passwords do not match");
             return;
         }
 
-        // Lỗi length
         if (newPassword.length < 6) {
             setPasswordMessage("Error: New password must be at least 6 characters");
             return;
         }
 
-        // Ở đây tức là Pass hợp lệ => chuyển sang saving tránh gửi lại yêu cầu rác và clear message
         setIsPasswordSaving(true);
         setPasswordMessage("");
 
-        // Bước cuối để đổi pass, gói 3 ô vừa nhập gửi về BE
         try {
             const res = await api.put(API_PATHS.USER_PASSWORD, { currentPassword, newPassword, confirmPassword });
-            // Gửi yêu cầu PUT vì hàm của api/user/password xử lý ycau PUT
-            // Đóng gói 3 ô này để gửi
 
-            if (res.status === 200) {      
+            if (res.status === 200) {
                 setPasswordMessage("Password updated successfully!");
-                setCurrentPassword("");   // Reset, xóa ở FE
+                setCurrentPassword("");
                 setNewPassword("");
                 setConfirmPassword("");
             } else {
                 setPasswordMessage(`Error: ${res.data.error || "Failed to update password"}`);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setPasswordMessage(`Error: ${err.response?.data?.error || "Network error. Could not update password."}`);
+            const error = err as { response?: { data?: { error?: string } } };
+            setPasswordMessage(`Error: ${error.response?.data?.error || "Network error. Could not update password."}`);
         } finally {
-            setIsPasswordSaving(false);    // Bỏ trạng thái saving trả lại function cho nút Save
+            setIsPasswordSaving(false);
+        }
+    };
+
+    const handleDeleteAccount = () => {
+        const confirmed = window.confirm("Are you sure you want to delete your account? This action cannot be undone.");
+        if (confirmed) {
+            console.log("Delete account triggered");
         }
     };
 
@@ -132,7 +119,6 @@ export default function SettingsPage() {
                     <h1 className="text-3xl font-bold text-slate-900 mb-2">Settings</h1>
                 </div>
 
-                {/* Profile Card */}
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <div className="p-5 border-b border-slate-200 bg-white flex items-center gap-2 text-slate-800 font-bold">
                         <User className="w-5 h-5 text-blue-600" />
@@ -158,8 +144,8 @@ export default function SettingsPage() {
                             </label>
                             <input
                                 type="text"
-                                value={name}                                  // Thay đổi ở biến name, 2 onChange còn lại là vào newpass và confirmpass
-                                onChange={(e) => setName(e.target.value)}     // Điền name để change 
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
                                 placeholder="What should we call you?"
                                 className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
                             />
@@ -189,7 +175,6 @@ export default function SettingsPage() {
                     </form>
                 </div>
 
-                {/* Security Card */}
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <div className="p-5 border-b border-slate-200 bg-white flex items-center gap-2 text-slate-800 font-bold">
                         <Lock className="w-5 h-5 text-indigo-600" />
@@ -217,7 +202,7 @@ export default function SettingsPage() {
                                 type="password"
                                 required
                                 value={currentPassword}
-                                onChange={(e) => setCurrentPassword(e.target.value)}      // Điền vào ô current password
+                                onChange={(e) => setCurrentPassword(e.target.value)}
                                 className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
                             />
                         </div>
@@ -262,6 +247,31 @@ export default function SettingsPage() {
                     </form>
                 </div>
 
+                <div className="bg-white rounded-xl border border-red-200 overflow-hidden">
+                    <div className="p-5 border-b border-red-100 bg-red-50 flex items-center gap-2 text-red-700 font-bold">
+                        <TriangleAlert className="w-5 h-5" />
+                        Danger Zone
+                    </div>
+
+                    <div className="p-6 flex flex-col gap-4">
+                        <div>
+                            <h2 className="text-base font-semibold text-slate-900">Delete Account</h2>
+                            <p className="mt-1 text-sm text-slate-600">
+                                Permanently remove your account and all associated access. This action cannot be undone.
+                            </p>
+                        </div>
+
+                        <div>
+                            <button
+                                type="button"
+                                onClick={handleDeleteAccount}
+                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                            >
+                                Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

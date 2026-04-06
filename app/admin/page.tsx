@@ -43,7 +43,7 @@ export default function AdminDashboard() {
 
     if (status === "loading" || loading) return <Loading />;    // Nếu status của session đăng nhập là loading thì hiện animation Loading thay vì để trắng tinh
 
-    if (!session || session.user.role !== "admin") {  // Nếu chưa đăng nhập (sẽ k có session) hoặc login rồi nhưng role k phải admin thì k đucợ access file này và return dòng chữ Unauthorized
+    if (!session || session.user.role !== "ADMIN") {  // Nếu chưa đăng nhập (sẽ k có session) hoặc login rồi nhưng role k phải admin thì k đucợ access file này và return dòng chữ Unauthorized
         return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="p-8 text-red-600 font-bold bg-white rounded-lg border border-slate-200">Unauthorized. Admin access required.</div></div>;
     }
 

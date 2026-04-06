@@ -26,7 +26,7 @@ export const testController = {
         try {
             // Check có phải admin không
             const session = await getServerSession(authOptions);
-            if (!session || session.user.role !== "admin") {
+            if (!session || session.user.role !== "ADMIN") {
                 return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
             }
 

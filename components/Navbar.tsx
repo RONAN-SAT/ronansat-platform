@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { BarChart2, BookOpen, LibraryBig, LogOut, Settings, Target, Trophy } from "lucide-react";
+import { BarChart2, BookOpen, LayoutDashboard, LibraryBig, LogOut, Settings, Target, Trophy } from "lucide-react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -23,61 +23,96 @@ export default function Navbar() {
     return null;
   }
 
+  const isParent = session.user.role === "PARENT";
+  const homeHref = isParent ? "/parent/dashboard" : "/full-length";
+
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
-          <Link href="/full-length" className="flex items-center gap-2">
+          <Link href={homeHref} className="flex items-center gap-2">
             <span className="text-xl font-bold text-slate-900 transition hover:text-blue-600">Ronan SAT</span>
           </Link>
         </div>
 
         <div className="flex items-center gap-4">
-          {session.user.role === "admin" ? (
-            <NavItem href="/admin" active={pathname === "/admin"} icon={<Settings className="h-4 w-4" />} label="Admin" />
-          ) : null}
+          {isParent ? (
+            <>
+              <NavItem
+                href="/parent/dashboard"
+                active={pathname === "/parent/dashboard"}
+                icon={<LayoutDashboard className="h-4 w-4" />}
+                label="Dashboard"
+              />
 
-          <NavItem
-            href="/full-length"
-            active={pathname === "/full-length"}
-            icon={<BookOpen className="h-4 w-4" />}
-            label="Full-length tests"
-          />
+              <NavItem
+                href="/hall-of-fame"
+                active={pathname === "/hall-of-fame"}
+                icon={<Trophy className="h-4 w-4" />}
+                label="Hall of Fame"
+              />
 
-          <NavItem
-            href="/sectional"
-            active={pathname === "/sectional"}
-            icon={<Target className="h-4 w-4" />}
-            label="Sectional tests"
-          />
+              <NavItem
+                href="/settings"
+                active={pathname === "/settings"}
+                icon={<Settings className="h-4 w-4" />}
+                label="Settings"
+              />
+            </>
+          ) : (
+            <>
+              {session.user.role === "ADMIN" ? (
+                <NavItem
+                  href="/admin"
+                  active={pathname === "/admin"}
+                  icon={<Settings className="h-4 w-4" />}
+                  label="Admin"
+                />
+              ) : null}
 
-          <NavItem
-            href="/review"
-            active={pathname === "/review"}
-            icon={<BarChart2 className="h-4 w-4" />}
-            label="Review Mistakes"
-          />
+              <NavItem
+                href="/full-length"
+                active={pathname === "/full-length"}
+                icon={<BookOpen className="h-4 w-4" />}
+                label="Full-length tests"
+              />
 
-          <NavItem
-            href="/vocab"
-            active={pathname === "/vocab"}
-            icon={<LibraryBig className="h-4 w-4" />}
-            label="Vocab"
-          />
+              <NavItem
+                href="/sectional"
+                active={pathname === "/sectional"}
+                icon={<Target className="h-4 w-4" />}
+                label="Sectional tests"
+              />
 
-          <NavItem
-            href="/hall-of-fame"
-            active={pathname === "/hall-of-fame"}
-            icon={<Trophy className="h-4 w-4" />}
-            label="Hall of Fame"
-          />
+              <NavItem
+                href="/review"
+                active={pathname === "/review"}
+                icon={<BarChart2 className="h-4 w-4" />}
+                label="Review Mistakes"
+              />
 
-          <NavItem
-            href="/settings"
-            active={pathname === "/settings"}
-            icon={<Settings className="h-4 w-4" />}
-            label="Settings"
-          />
+              <NavItem
+                href="/vocab"
+                active={pathname === "/vocab"}
+                icon={<LibraryBig className="h-4 w-4" />}
+                label="Vocab"
+              />
+
+              <NavItem
+                href="/hall-of-fame"
+                active={pathname === "/hall-of-fame"}
+                icon={<Trophy className="h-4 w-4" />}
+                label="Hall of Fame"
+              />
+
+              <NavItem
+                href="/settings"
+                active={pathname === "/settings"}
+                icon={<Settings className="h-4 w-4" />}
+                label="Settings"
+              />
+            </>
+          )}
 
           <div className="mx-2 h-6 w-px bg-slate-200" />
 

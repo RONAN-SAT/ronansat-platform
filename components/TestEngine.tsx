@@ -1,8 +1,8 @@
 "use client";
 
 import DesmosCalculator from "@/components/DesmosCalculator";
-import Loading from "@/components/Loading";
 import QuestionViewer from "@/components/QuestionViewer";
+import TestEntryLoading from "@/components/test/TestEntryLoading";
 import TestFooter from "@/components/test/TestFooter";
 import TestHeader from "@/components/test/TestHeader";
 import { useResizableDivider } from "@/hooks/useResizableDivider";
@@ -39,11 +39,7 @@ export default function TestEngine({ testId }: { testId: string }) {
   const { leftWidth, isDragging, containerRef, handleDividerMouseDown } = useResizableDivider(50);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <Loading />
-      </div>
-    );
+    return <TestEntryLoading />;
   }
 
   if (questions.length === 0) {

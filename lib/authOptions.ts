@@ -7,6 +7,7 @@ import dbConnect from "@/lib/mongodb";
 import User from "@/lib/models/User";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { isValidEmail, normalizeEmail } from "@/lib/security";
+import type { Role } from "@/lib/permissions";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -55,7 +56,7 @@ export const authOptions: NextAuthOptions = {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
-          role: user.role,
+          role: user.role as Role,
         };
       },
     }),
@@ -77,7 +78,7 @@ export const authOptions: NextAuthOptions = {
             await User.create({
               email: normalizedEmail,
               name: user.name || "Google User",
-              role: "user",
+              role: "STUDENT",
             });
           }
           return true;
@@ -105,7 +106,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as "user" | "admin";
+        session.user.role = token.role as Role;
       }
       return session;
     },

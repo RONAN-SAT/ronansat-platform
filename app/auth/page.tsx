@@ -1,79 +1,74 @@
-// FE, trang hiển thị form cho phép login và sign up
+// FE, trang hiá»ƒn thá»‹ form cho phÃ©p login vÃ  sign up
 
 "use client";
 
-import { signIn } from "next-auth/react";       // để kiểm tra email và pass
-import { useRouter } from "next/navigation";    // Chuyển hướng routing
-import api from "@/lib/axios";                  // gửi api từ FE tới BE
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
 import Link from "next/link";
-import { useState, useEffect } from "react"; // Thêm useEffect
-import { useSession } from "next-auth/react"; // Thêm dòng này để kiểm tra máy quét đăng nhập
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { AxiosError } from "axios";
 
 export default function AuthPage() {
-    const router = useRouter();                     // Máy routing
-    const { status } = useSession(); // Lấy trạng thái xem đã đăng nhập chưa, nếu rồi thì đá về trang chủ
+    const router = useRouter();
+    const { status } = useSession();
+
     useEffect(() => {
         if (status === "authenticated") {
             router.push("/full-length");
         }
     }, [status, router]);
 
+    const [isLogin, setIsLogin] = useState(true);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [name, setName] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [isError, setIsError] = useState(false);
 
-
-    const [isLogin, setIsLogin] = useState(true);   // Chế độ ban đầu là màn hình login, false thì chuyển sang sign up
-    const [email, setEmail] = useState("");         // Quản lý ndung nhập ô email
-    const [password, setPassword] = useState("");   // Quản lý ndung nhập ô pass
-    const [name, setName] = useState("");           // Quản lý ndung nhập ô name
-    const [error, setError] = useState("");         // Tbao lỗi
-    const [loading, setLoading] = useState(false);  // Trạng thái loading để bật/tắt animation, mặc định là đang k load
-    const [isError, setIsError] = useState(false); // Thêm dòng này: mặc định không phải lỗi
-
-
-// TRÁNH LỘ GIAO DIỆN: Trong lúc 1 giây hệ thống đang load kiểm tra, không hiện HTML của trang này ra
-    if (status === "loading" || status === "authenticated") {    
-        return null; 
+    if (status === "loading" || status === "authenticated") {
+        return null;
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {   // Khi ấn nút login/sign up
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");            // reset thông báo lỗi trước cho sạch
-        setIsError(true);        // reset lại mặc định là lỗi (chuẩn bị sẵn màu đỏ)
-        setLoading(true);        // Hiển thị đang load và chặn k cho gửi nữa tránh yêu cầu rác
+        setError("");
+        setIsError(true);
+        setLoading(true);
 
         try {
-            if (isLogin) {     // Nếu bấm submit mà đang ở trang login
-                const res = await signIn("credentials", {     // Dùng a bảo vệ signIn đi vào DB, tìm email và check pass có đúng không
+            if (isLogin) {
+                const res = await signIn("credentials", {
                     email,
                     password,
-                    redirect: false,                          // Mặc định khi NextAuth kiểm tra xong thì sẽ redirect sang trang khác => Disable tính năng đó
+                    redirect: false,
                 });
 
-                if (res?.error) {               // Nếu res có tồn tại (để tránh xập) và có error thì báo error
+                if (res?.error) {
                     setIsError(true);
                     setError(res.error);
                 } else {
-                    router.push("/full-length");    // Nếu k có lỗi thì route user về trang chủ
-                    router.refresh();    // Ấn refresh: Báo server không dùng bản nháp (chứa thông tin trang login) nữa mà F5 tải lại thông tin của trang chủ
+                    router.push("/full-length");
+                    router.refresh();
                 }
-            } else {     // Tức là đang ở trang sign up
-                const res = await api.post(API_PATHS.AUTH_REGISTER, { email, password, name });   // Lấy các thông tin email pass name để gửi 1 yêu cầu post về BE, mất tgian nên await
-                // Ở đây dùng api nên yêu cầu được gửi tới file api để lưu vào DB luôn ở dòng này
-                
-                //Nếu BE bảo kết quả thành công thì tự động route về trang chủ luôn, k cần điền lại ở Login
+            } else {
+                const res = await api.post(API_PATHS.AUTH_REGISTER, { email, password, name });
+
                 if (res.status >= 200 && res.status < 300) {
-                    setIsError(false);  // Báo rằng đây KHÔNG PHẢI lỗi (để hiển thị nền xanh)
-                    setError("Register successfully! Redirecting..."); // Set thông báo thành công
+                    setIsError(false);
+                    setError("Register successfully! Redirecting...");
                     await signIn("credentials", { email, password, redirect: false });
                     router.push("/full-length");
                     router.refresh();
-                } else {        // BE báo lỗi
+                } else {
                     setIsError(true);
                     setError(res.data.message || "Registration failed");
                 }
             }
-        } catch (err: unknown) {    
+        } catch (err: unknown) {
             setIsError(true);
             const axiosError = err as AxiosError<{ message?: string; error?: string }>;
             setError(
@@ -81,14 +76,14 @@ export default function AuthPage() {
                 axiosError.response?.data?.error ||
                 "An unexpected error occurred"
             );
-        } finally {     // Tắt animation lỗi và trả lại function cho nút gửi
+        } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50">
-            <div className="max-w-md w-full p-8 bg-white rounded-xl border border-slate-100">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+            <div className="max-w-md w-full p-8 bg-white rounded-xl border border-slate-100 shadow-sm">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-900">
                         {isLogin ? "Welcome Back" : "Create Account"}
@@ -115,8 +110,8 @@ export default function AuthPage() {
                             <input
                                 type="text"
                                 required
-                                value={name}  // value quyết định ô nhập liệu hiển thị gì ra màn hình
-                                onChange={(e) => setName(e.target.value)}    // Quản lý việc điền name vào ô nhập email
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
                                 className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
                                 placeholder="John Doe"
                             />
@@ -130,8 +125,8 @@ export default function AuthPage() {
                         <input
                             type="email"
                             required
-                            value={email}                                  // Hiện những gì user đang type ra ô email   
-                            onChange={(e) => setEmail(e.target.value)}     // Quản lý việc điền email vào ô email
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
                             placeholder="you@example.com"
                         />
@@ -144,10 +139,10 @@ export default function AuthPage() {
                         <input
                             type="password"
                             required
-                            value={password}                                   // Hiện những gì user đang type ra ô pass 
-                            onChange={(e) => setPassword(e.target.value)}      // Quản lý việc điền pass vào ô pass
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
-                            placeholder="••••••••"
+                            placeholder="********"
                         />
 
                         {isLogin && (
@@ -168,6 +163,12 @@ export default function AuthPage() {
                     </button>
                 </form>
 
+                <Link
+                    href="/auth/parent"
+                    className="mt-4 flex w-full items-center justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
+                >
+                    Log in as Parent
+                </Link>
 
                 <div className="mt-6">
                     <div className="relative">
@@ -199,7 +200,7 @@ export default function AuthPage() {
                         onClick={() => {
                             setIsLogin(!isLogin);
                             setError("");
-                            setIsError(false); // Trả lại trạng thái bình thường khi đổi form
+                            setIsError(false);
                         }}
                         className="cursor-pointer text-sm text-blue-600 hover:text-blue-800 hover:underline"
                     >
