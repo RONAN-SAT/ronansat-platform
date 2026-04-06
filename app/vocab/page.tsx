@@ -343,7 +343,7 @@ export default function VocabPage() {
             <div>
               <div className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-400">Collections</div>
             </div>
-            <div className="text-[12px] text-slate-500">{board.columns.length + 1} lists</div>
+            <div className="text-[12px] text-slate-500">{board.columns.length} lists</div>
           </div>
 
           <div
@@ -376,7 +376,26 @@ export default function VocabPage() {
               {!hydrated ? (
                 <BoardEmptyState text="Loading..." />
               ) : inboxCards.length === 0 ? (
-                <BoardEmptyState text="No words saved yet." />
+                openComposerByBucket.inbox ? (
+                  <AddCardComposer
+                    isOpen
+                    value={draftByBucket.inbox ?? ""}
+                    placeholder="Add the first card"
+                    variant="empty"
+                    onOpen={() => undefined}
+                    onClose={() => {
+                      setDraftByBucket((previous) => ({ ...previous, inbox: "" }));
+                      setOpenComposerByBucket((previous) => ({ ...previous, inbox: false }));
+                    }}
+                    onChange={(value) => setDraftByBucket((previous) => ({ ...previous, inbox: value }))}
+                    onAdd={() => handleAddCard("inbox")}
+                  />
+                ) : (
+                  <BoardEmptyState
+                    text="No words saved yet."
+                    onClick={() => setOpenComposerByBucket((previous) => ({ ...previous, inbox: true }))}
+                  />
+                )
               ) : (
                 inboxCards.map((card) => (
                   <EditableVocabCard
@@ -396,17 +415,19 @@ export default function VocabPage() {
                   />
                 ))
               )}
-              <AddCardComposer
-                isOpen={!!openComposerByBucket.inbox}
-                value={draftByBucket.inbox ?? ""}
-                onOpen={() => setOpenComposerByBucket((previous) => ({ ...previous, inbox: true }))}
-                onClose={() => {
-                  setDraftByBucket((previous) => ({ ...previous, inbox: "" }));
-                  setOpenComposerByBucket((previous) => ({ ...previous, inbox: false }));
-                }}
-                onChange={(value) => setDraftByBucket((previous) => ({ ...previous, inbox: value }))}
-                onAdd={() => handleAddCard("inbox")}
-              />
+              {inboxCards.length > 0 || !openComposerByBucket.inbox ? (
+                <AddCardComposer
+                  isOpen={!!openComposerByBucket.inbox}
+                  value={draftByBucket.inbox ?? ""}
+                  onOpen={() => setOpenComposerByBucket((previous) => ({ ...previous, inbox: true }))}
+                  onClose={() => {
+                    setDraftByBucket((previous) => ({ ...previous, inbox: "" }));
+                    setOpenComposerByBucket((previous) => ({ ...previous, inbox: false }));
+                  }}
+                  onChange={(value) => setDraftByBucket((previous) => ({ ...previous, inbox: value }))}
+                  onAdd={() => handleAddCard("inbox")}
+                />
+              ) : null}
             </BoardColumnShell>
 
             {board.columns.map((column) => {
@@ -883,7 +904,7 @@ function AddCardComposer({
         }}
         placeholder={placeholder}
         className={`w-full resize-none rounded-[12px] border border-slate-200 bg-white px-3 py-2.5 text-[14px] leading-6 text-slate-900 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 ${
-          isEmptyVariant ? "min-h-[112px]" : "min-h-[86px]"
+          isEmptyVariant ? "min-h-[56px]" : "min-h-[86px]"
         }`}
       />
       <div className={`flex items-center gap-3 ${isEmptyVariant ? "mt-3 justify-between" : "mt-2.5"}`}>

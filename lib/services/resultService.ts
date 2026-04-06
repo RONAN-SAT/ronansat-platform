@@ -5,6 +5,7 @@ import Question from "@/lib/models/Question";
 import Result from "@/lib/models/Result";
 import Test from "@/lib/models/Test";
 import User from "@/lib/models/User";
+import redis from "@/lib/redis";
 import { ResultValidationSchema } from "@/lib/schema/result";
 
 type ValidatedAnswer = {
@@ -70,6 +71,14 @@ function buildDateFilter(days?: number) {
   const dateLimit = new Date();
   dateLimit.setDate(dateLimit.getDate() - days);
   return { $gte: dateLimit };
+}
+
+async function deleteCacheKeys(keys: Array<string | null | undefined>) {
+  const uniqueKeys = [...new Set(keys.filter((key): key is string => Boolean(key)))];
+
+  if (uniqueKeys.length > 0) {
+    await redis.del(...uniqueKeys);
+  }
 }
 
 export const resultService = {
@@ -189,6 +198,8 @@ export const resultService = {
       mathScore,
     });
 
+    await deleteCacheKeys(["leaderboard"]);
+
     const wrongIds = gradedAnswers.filter((answer) => !answer.isCorrect).map((answer) => answer.questionId);
     const userUpdate: {
       $set: { lastTestDate: Date };
@@ -214,6 +225,7 @@ export const resultService = {
 
     try {
       await User.updateOne({ _id: userObjectId }, userUpdate);
+      await deleteCacheKeys([`user:stats:${userId}`]);
     } catch (userUpdateError) {
       console.error("User stats update failed after result creation", userUpdateError);
     }
