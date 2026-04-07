@@ -33,7 +33,7 @@ export default function ParentAuthPage() {
   }, [router, session?.user?.role, status]);
 
   if (status === "loading" || status === "authenticated") {
-    return <Loading showQuote={false} />;
+    return <Loading/>;
   }
 
   const getErrorMessage = async (response: Response): Promise<string> => {

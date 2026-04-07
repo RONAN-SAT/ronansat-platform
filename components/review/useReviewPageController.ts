@@ -23,7 +23,11 @@ export function useReviewPageController() {
   const [refreshing, setRefreshing] = useState(false);
   const [testType, setTestType] = useState<"full" | "sectional">(urlMode === "sectional" ? "sectional" : "full");
   const [activeTestId, setActiveTestId] = useState<string | null>(urlTestId || null);
-  const [selectedAnswer, setSelectedAnswer] = useState<ReviewAnswer | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<{
+    answer: ReviewAnswer;
+    questionNumber: number;
+    testId?: string;
+  } | null>(null);
   const [expandedExplanations, setExpandedExplanations] = useState<Record<string, string>>({});
   const [loadingExplanations, setLoadingExplanations] = useState<Record<string, boolean>>({});
 

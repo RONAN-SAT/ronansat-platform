@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { BarChart2, BookOpen, LayoutDashboard, LibraryBig, LogOut, Settings, Target, Trophy } from "lucide-react";
+import { BarChart2, BookOpen, LayoutDashboard, LibraryBig, LogOut, Settings, Target, Trophy, Wrench } from "lucide-react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -24,7 +24,8 @@ export default function Navbar() {
   }
 
   const isParent = session.user.role === "PARENT";
-  const homeHref = isParent ? "/parent/dashboard" : "/full-length";
+  const isAdmin = session.user.role === "ADMIN";
+  const homeHref = isAdmin ? "/admin" : "/dashboard";
 
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white">
@@ -39,8 +40,8 @@ export default function Navbar() {
           {isParent ? (
             <>
               <NavItem
-                href="/parent/dashboard"
-                active={pathname === "/parent/dashboard"}
+                href="/dashboard"
+                active={pathname === "/dashboard" || pathname === "/parent/dashboard"}
                 icon={<LayoutDashboard className="h-4 w-4" />}
                 label="Dashboard"
               />
@@ -61,13 +62,21 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              {session.user.role === "ADMIN" ? (
-                <NavItem
-                  href="/admin"
-                  active={pathname === "/admin"}
-                  icon={<Settings className="h-4 w-4" />}
-                  label="Admin"
-                />
+              {isAdmin ? (
+                <>
+                  <NavItem
+                    href="/fix"
+                    active={pathname === "/fix"}
+                    icon={<Wrench className="h-4 w-4" />}
+                    label="Fix"
+                  />
+                  <NavItem
+                    href="/admin"
+                    active={pathname === "/admin"}
+                    icon={<Settings className="h-4 w-4" />}
+                    label="Admin"
+                  />
+                </>
               ) : null}
 
               <NavItem
@@ -88,7 +97,7 @@ export default function Navbar() {
                 href="/review"
                 active={pathname === "/review"}
                 icon={<BarChart2 className="h-4 w-4" />}
-                label="Review Mistakes"
+                label="Results"
               />
 
               <NavItem
@@ -96,6 +105,13 @@ export default function Navbar() {
                 active={pathname === "/vocab"}
                 icon={<LibraryBig className="h-4 w-4" />}
                 label="Vocab"
+              />
+
+              <NavItem
+                href="/dashboard"
+                active={pathname === "/dashboard" || pathname === "/parent/dashboard"}
+                icon={<LayoutDashboard className="h-4 w-4" />}
+                label="Dashboard"
               />
 
               <NavItem

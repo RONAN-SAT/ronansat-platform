@@ -47,11 +47,23 @@ function ReviewContent() {
 
       {selectedAnswer ? (
         <ReviewPopup
-          ans={selectedAnswer}
+          ans={selectedAnswer.answer}
           onClose={() => setSelectedAnswer(null)}
-          expandedExplanation={expandedExplanations[selectedAnswer.questionId?._id || ""]}
-          loadingExplanation={!!loadingExplanations[selectedAnswer.questionId?._id || ""]}
+          expandedExplanation={expandedExplanations[selectedAnswer.answer.questionId?._id || ""]}
+          loadingExplanation={!!loadingExplanations[selectedAnswer.answer.questionId?._id || ""]}
           onExpandExplanation={handleExpandExplanation}
+          reportContext={
+            selectedAnswer.testId && selectedAnswer.answer.questionId?._id && selectedAnswer.answer.questionId.section && selectedAnswer.answer.questionId.module
+              ? {
+                  testId: selectedAnswer.testId,
+                  questionId: selectedAnswer.answer.questionId._id,
+                  section: selectedAnswer.answer.questionId.section,
+                  module: selectedAnswer.answer.questionId.module,
+                  questionNumber: selectedAnswer.questionNumber,
+                  source: "review",
+                }
+              : undefined
+          }
         />
       ) : null}
     </div>

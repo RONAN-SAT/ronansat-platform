@@ -13,6 +13,7 @@ type BoardColumnShellProps = {
   onDrop: () => void;
   shellClass: string;
   accentClass: string;
+  widthClass?: string;
   isDragging?: boolean;
   headerDraggable?: boolean;
   onHeaderClick?: (() => void) | undefined;
@@ -28,6 +29,7 @@ export function BoardColumnShell({
   onDrop,
   shellClass,
   accentClass,
+  widthClass = COLUMN_WIDTH,
   isDragging = false,
   headerDraggable = false,
   onHeaderClick,
@@ -39,7 +41,7 @@ export function BoardColumnShell({
   return (
     <section
       data-column-shell
-      className={`${COLUMN_WIDTH} flex h-[calc(100vh-10.8rem)] shrink-0 flex-col rounded-[20px] border p-3 shadow-[0_16px_44px_rgba(148,163,184,0.14)] backdrop-blur-xl transition-all duration-150 ${shellClass} ${
+      className={`${widthClass} flex h-[calc(100vh-10.8rem)] shrink-0 flex-col rounded-[20px] border p-3 shadow-[0_16px_44px_rgba(148,163,184,0.14)] backdrop-blur-xl transition-all duration-150 ${shellClass} ${
         isDragging ? "opacity-35" : ""
       }`}
       onDragOver={(event) => event.preventDefault()}

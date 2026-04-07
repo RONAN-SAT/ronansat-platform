@@ -10,9 +10,9 @@ export default async function AuthRedirectPage() {
     redirect("/auth");
   }
 
-  if (session.user.role === "PARENT") {
-    redirect("/parent/dashboard");
+  if (session.user.role === "ADMIN") {
+    redirect("/admin");
   }
 
-  redirect("/full-length");
+  redirect("/dashboard");
 }

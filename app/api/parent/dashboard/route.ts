@@ -135,44 +135,49 @@ export async function GET(): Promise<NextResponse> {
     const session = await getServerSession(authOptions);
     const sessionUser = session?.user as SessionUser | undefined;
 
-    if (!sessionUser?.id || sessionUser.role !== "PARENT") {
+    if (!sessionUser?.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+
     await dbConnect();
 
-    const parent = await User.findById(sessionUser.id)
-      .select("childrenIds")
-      .lean<{ childrenIds?: mongoose.Types.ObjectId[] } | null>();
+    let targetUserId: mongoose.Types.ObjectId | string | undefined = sessionUser.id;
 
-    if (!parent) {
-      return NextResponse.json({ error: "Parent not found" }, { status: 404 });
-    }
+    if (sessionUser.role === "PARENT") {
+      const parent = await User.findById(sessionUser.id)
+        .select("childrenIds")
+        .lean<{ childrenIds?: mongoose.Types.ObjectId[] } | null>();
 
-    const childId = parent.childrenIds?.[0];
+      if (!parent) {
+        return NextResponse.json({ error: "Parent not found" }, { status: 404 });
+      }
 
-    if (!childId) {
-      return NextResponse.json(
-        {
-          hasChildren: false,
-          child: null,
-          overview: {
-            highestScore: 0,
-            testsCompleted: 0,
-            activityLast30Days: 0,
-            lastActiveAt: null,
+      targetUserId = parent.childrenIds?.[0];
+
+      if (!targetUserId) {
+        return NextResponse.json(
+          {
+            hasChildren: false,
+            child: null,
+            overview: {
+              highestScore: 0,
+              testsCompleted: 0,
+              activityLast30Days: 0,
+              lastActiveAt: null,
+            },
+            timeSpentByWindow: {},
+            scoreHistory: [],
+            testsPerDay: {},
+            timeSpentPerDay: {},
+            recentTests: [],
           },
-          timeSpentByWindow: {},
-          scoreHistory: [],
-          testsPerDay: {},
-          timeSpentPerDay: {},
-          recentTests: [],
-        },
-        { status: 200 }
-      );
+          { status: 200 }
+        );
+      }
     }
 
-    const child = await User.findById(childId)
+    const child = await User.findById(targetUserId)
       .select("name email highestScore")
       .lean<{
         _id: mongoose.Types.ObjectId;

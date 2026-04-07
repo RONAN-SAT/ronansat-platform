@@ -61,9 +61,8 @@ export default function ActivityHeatmap({ results }: ActivityHeatmapProps) {
   };
 
   return (
-    <div className="flex h-full w-full flex-col justify-end pt-2">
-      <div className="flex w-full flex-col items-center pb-1">
-        <div className="flex w-full flex-wrap justify-center gap-1 sm:gap-1.5">
+    <div className="flex h-full w-full justify-center">
+      <div className="grid grid-cols-10 gap-1 sm:gap-1.5">
           {heatmapData.map((day) => (
             <div key={day.dateKey} className="group relative">
               <div
@@ -78,7 +77,6 @@ export default function ActivityHeatmap({ results }: ActivityHeatmapProps) {
               </div>
             </div>
           ))}
-        </div>
       </div>
     </div>
   );

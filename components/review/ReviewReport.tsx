@@ -20,17 +20,19 @@ import {
 type ReviewReportProps = {
   testType: "full" | "sectional";
   activeTest?: ReviewResult;
-  onSelectAnswer: (answer: ReviewAnswer) => void;
+  onSelectAnswer: (payload: { answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
 };
 
 function AnswerGrid({
   answers,
   startIndex,
+  testId,
   onSelectAnswer,
 }: {
   answers: ReviewAnswer[];
   startIndex: number;
-  onSelectAnswer: (answer: ReviewAnswer) => void;
+  testId?: string;
+  onSelectAnswer: (payload: { answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
 }) {
   if (!answers || answers.length === 0) {
     return <p className="mt-2 text-sm italic text-slate-400">No data for this module.</p>;
@@ -52,7 +54,7 @@ function AnswerGrid({
           <button
             key={`${answer.questionId?._id || index}-${startIndex + index}`}
             title={`Q${startIndex + index + 1} - ${isOmitted ? "Omitted" : answer.isCorrect ? "Correct" : "Incorrect"}`}
-            onClick={() => onSelectAnswer(answer)}
+            onClick={() => onSelectAnswer({ answer, questionNumber: startIndex + index + 1, testId })}
             className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold transition-all duration-150 hover:scale-110 active:scale-95 ${className}`}
           >
             {startIndex + index + 1}
@@ -98,7 +100,13 @@ function ReviewSummaryCard({ testType, activeTest }: { testType: "full" | "secti
   );
 }
 
-function FullLengthReport({ activeTest, onSelectAnswer }: { activeTest: ReviewResult; onSelectAnswer: (answer: ReviewAnswer) => void }) {
+function FullLengthReport({
+  activeTest,
+  onSelectAnswer,
+}: {
+  activeTest: ReviewResult;
+  onSelectAnswer: (payload: { answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
+}) {
   const { rwModule1, rwModule2, mathModule1, mathModule2 } = groupFullLengthAnswers(activeTest);
 
   return (
@@ -130,7 +138,7 @@ function FullLengthReport({ activeTest, onSelectAnswer }: { activeTest: ReviewRe
                 </div>
               </div>
               <div className="mb-1 h-px bg-indigo-100" />
-              <AnswerGrid answers={answers} startIndex={startIndex} onSelectAnswer={onSelectAnswer} />
+              <AnswerGrid answers={answers} startIndex={startIndex} testId={activeTest.testId?._id} onSelectAnswer={onSelectAnswer} />
             </div>
           );
         })}
@@ -163,7 +171,7 @@ function FullLengthReport({ activeTest, onSelectAnswer }: { activeTest: ReviewRe
                 </div>
               </div>
               <div className="mb-1 h-px bg-blue-100" />
-              <AnswerGrid answers={answers} startIndex={startIndex} onSelectAnswer={onSelectAnswer} />
+              <AnswerGrid answers={answers} startIndex={startIndex} testId={activeTest.testId?._id} onSelectAnswer={onSelectAnswer} />
             </div>
           );
         })}
@@ -172,7 +180,13 @@ function FullLengthReport({ activeTest, onSelectAnswer }: { activeTest: ReviewRe
   );
 }
 
-function SectionalReport({ activeTest, onSelectAnswer }: { activeTest: ReviewResult; onSelectAnswer: (answer: ReviewAnswer) => void }) {
+function SectionalReport({
+  activeTest,
+  onSelectAnswer,
+}: {
+  activeTest: ReviewResult;
+  onSelectAnswer: (payload: { answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
+}) {
   const colors = getSectionalColors(activeTest.sectionalSubject || "");
   const answers = activeTest.answers || [];
   const stats = getReviewStats(answers);
@@ -195,7 +209,7 @@ function SectionalReport({ activeTest, onSelectAnswer }: { activeTest: ReviewRes
           </div>
         </div>
         <div className={`mb-1 h-px ${colors.divider}`} />
-        <AnswerGrid answers={answers} startIndex={0} onSelectAnswer={onSelectAnswer} />
+        <AnswerGrid answers={answers} startIndex={0} testId={activeTest.testId?._id} onSelectAnswer={onSelectAnswer} />
       </div>
     </div>
   );

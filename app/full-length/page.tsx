@@ -1,10 +1,6 @@
 "use client";
 
-import LeaderboardTable from "@/components/dashboard/LeaderboardTable";
-import LeaderboardTableSkeleton from "@/components/dashboard/LeaderboardTableSkeleton";
 import TestLibrary from "@/components/dashboard/TestLibrary";
-import UserStatsPanel from "@/components/dashboard/UserStatsPanel";
-import UserStatsPanelSkeleton from "@/components/dashboard/UserStatsPanelSkeleton";
 import { useFullLengthDashboardController } from "@/components/dashboard/useFullLengthDashboardController";
 
 export default function FullLengthDashboard() {
@@ -14,16 +10,9 @@ export default function FullLengthDashboard() {
     hasCachedDashboardView,
     testsLoading,
     testsRefreshing,
-    statsLoading,
-    statsRefreshing,
-    leaderboardLoading,
-    leaderboardRefreshing,
-    userStats,
-    userResults,
     sortOption,
     page,
     totalPages,
-    leaderboard,
     selectedPeriod,
     uniquePeriods,
     filteredTests,
@@ -36,8 +25,6 @@ export default function FullLengthDashboard() {
     return (
       <div className="min-h-screen bg-slate-50 pb-12">
         <main className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
-          <UserStatsPanelSkeleton />
-          <LeaderboardTableSkeleton />
           <TestLibrary
             uniquePeriods={["All", "March 2026", "May 2026"]}
             selectedPeriod="All"
@@ -62,23 +49,10 @@ export default function FullLengthDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
       <main className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
-        {statsLoading && userResults.length === 0 && userStats.testsTaken === 0 && userStats.highestScore === 0 ? (
-          <UserStatsPanelSkeleton />
-        ) : (
-          <div>
-            {statsRefreshing ? <div className="mb-2 animate-pulse text-sm text-slate-500">Syncing stats...</div> : null}
-            <UserStatsPanel userStats={userStats} userResults={userResults} />
-          </div>
-        )}
-
-        {leaderboardLoading && leaderboard.length === 0 ? (
-          <LeaderboardTableSkeleton />
-        ) : (
-          <div>
-            {leaderboardRefreshing ? <div className="mb-2 animate-pulse text-sm text-slate-500">Syncing leaderboard...</div> : null}
-            <LeaderboardTable leaderboard={leaderboard} />
-          </div>
-        )}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Full-length Practice</h1>
+          <p className="mt-2 text-slate-600">Experience the full SAT test to evaluate your strengths, improve timing, and track overall progress.</p>
+        </div>
 
         <TestLibrary
           uniquePeriods={uniquePeriods}

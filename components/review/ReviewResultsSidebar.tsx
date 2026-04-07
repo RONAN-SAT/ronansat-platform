@@ -33,7 +33,7 @@ export function ReviewResultsSidebar({
           <div className="rounded-lg bg-blue-50 p-1.5">
             <LayoutGrid className="h-4 w-4 text-blue-600" />
           </div>
-          <h2 className="text-base font-bold text-slate-800">Review Mistakes</h2>
+          <h2 className="text-base font-bold text-slate-800">Results</h2>
         </div>
 
         <div className="flex gap-1 rounded-xl bg-slate-100 p-1">

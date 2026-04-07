@@ -31,7 +31,7 @@ export default function AuthPage() {
     const [isError, setIsError] = useState(false);
 
     if (status === "loading" || status === "authenticated") {
-        return <Loading showQuote={false} />;
+        return <Loading/>;
     }
 
     const handleSubmit = async (e: React.FormEvent) => {

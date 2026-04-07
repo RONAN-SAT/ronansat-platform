@@ -31,7 +31,7 @@ export default function LandingFooter() {
               </li>
               <li>
                 <Link href="/auth" className="hover:text-white transition-colors">
-                  Review Mistakes
+                  Results
                 </Link>
               </li>
               <li>

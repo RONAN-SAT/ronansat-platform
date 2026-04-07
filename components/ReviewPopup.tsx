@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Sparkles, Calculator, BookOpen, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import DesmosCalculator from "@/components/DesmosCalculator";
+import { ReportErrorButton } from "@/components/report/ReportErrorButton";
 import ReviewChatbot from "@/components/ReviewChatbot";
 import "katex/dist/katex.min.css";
 import Latex from "react-latex-next";
@@ -18,9 +19,17 @@ interface ReviewPopupProps {
     expandedExplanation: string | undefined;
     loadingExplanation: boolean;
     onExpandExplanation: (qId: string) => void;
+    reportContext?: {
+        testId: string;
+        questionId: string;
+        section: string;
+        module: number;
+        questionNumber: number;
+        source: "test" | "review";
+    };
 }
 
-export default function ReviewPopup({ ans, onClose, expandedExplanation, loadingExplanation, onExpandExplanation }: ReviewPopupProps) {
+export default function ReviewPopup({ ans, onClose, expandedExplanation, loadingExplanation, onExpandExplanation, reportContext }: ReviewPopupProps) {
     const q = ans?.questionId;
 
     const [showCalculator, setShowCalculator] = useState(false);
@@ -88,6 +97,7 @@ export default function ReviewPopup({ ans, onClose, expandedExplanation, loading
 
             {/* Right */}
             <div className="flex items-center gap-2">
+                {reportContext ? <ReportErrorButton context={reportContext} /> : null}
                 <button
                     onClick={handleToggleExplanation}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all border ${

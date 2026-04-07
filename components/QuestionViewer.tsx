@@ -136,7 +136,7 @@ export default function QuestionViewer({
             <SelectableTextPanel
               annotations={currentAnnotations.passage}
               onChange={(nextAnnotations) => updateAnnotations("passage", nextAnnotations)}
-              className="whitespace-pre-wrap font-serif text-[15px] leading-relaxed text-slate-900 selection:bg-yellow-200 selection:text-black"
+              className="whitespace-pre-wrap text-[15px] leading-relaxed text-slate-900 selection:bg-yellow-200 selection:text-black [font-family:Georgia,'Times_New_Roman',Times,serif]"
               sourceQuestionId={question._id}
             >
               {passageContent}
@@ -222,7 +222,7 @@ export default function QuestionViewer({
         <SelectableTextPanel
           annotations={currentAnnotations.questionText}
           onChange={(nextAnnotations) => updateAnnotations("questionText", nextAnnotations)}
-          className="px-6 pb-3 pt-3 text-[15px] leading-relaxed text-slate-900"
+          className="px-6 pb-3 pt-3 text-[15px] leading-relaxed text-slate-900 [font-family:Georgia,'Times_New_Roman',Times,serif]"
           sourceQuestionId={question._id}
         >
           {questionTextContent}
@@ -240,7 +240,7 @@ export default function QuestionViewer({
                 onChange={(event) => onAnswerSelect(question._id, event.target.value)}
                 maxLength={MAX_SPR_ANSWER_LENGTH}
                 placeholder="Nhap cau tra loi cua ban (VD: 1/3, 0.5, ...)"
-                className="w-full max-w-sm rounded border border-slate-400 px-4 py-2.5 text-[15px] text-slate-800 outline-none transition-all focus:border-[#1e3a5f] focus:ring-2 focus:ring-blue-100"
+                className="w-full max-w-sm rounded border border-slate-400 px-4 py-2.5 text-[15px] text-slate-800 outline-none transition-all focus:border-[#1e3a5f] focus:ring-2 focus:ring-blue-100 [font-family:Georgia,'Times_New_Roman',Times,serif]"
               />
               <div className="mt-2 flex max-w-sm items-center justify-between gap-3 text-sm text-slate-500">
                 <p>Ban co the nhap phan so, so thap phan hoac so nguyen.</p>
@@ -288,7 +288,9 @@ export default function QuestionViewer({
                       <SelectableTextPanel
                         annotations={currentAnnotations.choices[storedChoiceCode] ?? []}
                         onChange={(nextAnnotations) => updateChoiceAnnotations(storedChoiceCode, nextAnnotations)}
-                        className={`min-w-0 flex-1 text-[15px] leading-snug ${isCrossed ? "text-slate-400" : "text-slate-900"}`}
+                        className={`min-w-0 flex-1 text-[15px] leading-snug [font-family:Georgia,'Times_New_Roman',Times,serif] ${
+                          isCrossed ? "text-slate-400" : "text-slate-900"
+                        }`}
                         sourceQuestionId={question._id}
                       >
                         <Latex>{choice || ""}</Latex>

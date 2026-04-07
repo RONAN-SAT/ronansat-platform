@@ -1,8 +1,6 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import Link from "next/link";
 import Loading from "@/components/Loading";
 
@@ -16,12 +14,9 @@ import LandingFooter from "@/components/landing/LandingFooter";
 
 export default function Home() {
   const { status } = useSession();
-  const router = useRouter();
-
-
 
   if (status === "loading") {
-    return <Loading showQuote={false} />;
+    return <Loading />;
   }
 
   // Render Landing Page cho người chưa đăng nhập

@@ -82,6 +82,14 @@ export default function TestEngine({ testId }: { testId: string }) {
         confirmTitle={buttonText}
         confirmDescription={confirmDescription}
         onLeave={() => router.push(mode === "sectional" ? "/sectional" : "/full-length")}
+        reportContext={{
+          testId,
+          questionId: currentQuestion._id,
+          section: currentStage.section,
+          module: currentStage.module,
+          questionNumber: currentIndex + 1,
+          source: "test",
+        }}
       />
 
       <DesmosCalculator isOpen={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />

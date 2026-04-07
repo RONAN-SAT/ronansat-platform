@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Activity, ArrowRight, CalendarRange, ChevronLeft, ChevronRight, Trophy, Users } from "lucide-react";
 
 import ActivityHeatmap from "@/components/ActivityHeatmap";
+import LeaderboardTable from "@/components/dashboard/LeaderboardTable";
+import LeaderboardTableSkeleton from "@/components/dashboard/LeaderboardTableSkeleton";
+import type { LeaderboardEntry } from "@/types/testLibrary";
 
 type Overview = {
   highestScore: number;
@@ -62,9 +65,13 @@ type ParentDashboardResponse = {
   error?: string;
 };
 
+type LeaderboardResponse = {
+  leaderboard?: LeaderboardEntry[];
+  error?: string;
+};
+
 type ScoreDisplayOption = "rw" | "math" | "total";
-type TimeWindow = 1 | 7 | 15 | 30;
-type DailyTrendWindow = 7 | 15 | 30;
+type TrendWindow = 7 | 15 | 30;
 
 const SCORE_OPTIONS: Array<{ key: ScoreDisplayOption; label: string; color: string }> = [
   { key: "rw", label: "Reading & Writing", color: "#0f766e" },
@@ -72,8 +79,7 @@ const SCORE_OPTIONS: Array<{ key: ScoreDisplayOption; label: string; color: stri
   { key: "total", label: "Total", color: "#7c2d12" },
 ];
 
-const TIME_WINDOW_OPTIONS: TimeWindow[] = [1, 7, 15, 30];
-const DAILY_TREND_OPTIONS: DailyTrendWindow[] = [7, 15, 30];
+const TREND_WINDOW_OPTIONS: TrendWindow[] = [7, 15, 30];
 const TESTS_PER_PAGE = 10;
 
 function DashboardSkeleton() {
@@ -172,56 +178,101 @@ function ChartEmptyState({ message }: { message: string }) {
 function ScoreHistoryChart({
   data,
   selectedMetric,
+  selectedWindow,
   onSelectMetric,
+  onSelectWindow,
 }: {
   data: ScoreHistoryPoint[];
   selectedMetric: ScoreDisplayOption;
+  selectedWindow: TrendWindow;
   onSelectMetric: (value: ScoreDisplayOption) => void;
+  onSelectWindow: (value: TrendWindow) => void;
 }) {
-  if (data.length === 0) {
-    return <ChartEmptyState message="No full-length test scores yet." />;
-  }
-
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const width = Math.max(640, data.length * 72);
-  const height = 240;
+  const height = 260;
   const leftPadding = 56;
   const rightPadding = 18;
   const topPadding = 20;
-  const bottomPadding = 56;
+  const bottomPadding = 68;
   const chartWidth = width - leftPadding - rightPadding;
   const chartHeight = height - topPadding - bottomPadding;
-  const minValue = 400;
-  const maxValue = 1600;
-  const yAxisTicks = [400, 700, 1000, 1300, 1600];
+  const scoreRange =
+    selectedMetric === "total"
+      ? { min: 400, max: 1600, ticks: [400, 700, 1000, 1300, 1600], label: "Range fixed at 400-1600" }
+      : { min: 0, max: 800, ticks: [0, 200, 350, 500, 650, 800], label: "Range fixed at 200-800" };
+  const minValue = scoreRange.min;
+  const maxValue = scoreRange.max;
+  const yAxisTicks = scoreRange.ticks;
   const selectedOption = SCORE_OPTIONS.find((option) => option.key === selectedMetric) ?? SCORE_OPTIONS[0];
   const values = data.map((point) => Math.max(0, point[selectedMetric]));
   const labelIndexes = getVisibleLabelIndexes(data.length);
 
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || selectedWindow !== 30) {
+      return;
+    }
+
+    container.scrollLeft = container.scrollWidth;
+  }, [data.length, selectedWindow, selectedMetric]);
+
+  if (data.length === 0) {
+    return <ChartEmptyState message="No full-length test scores yet." />;
+  }
+
   return (
     <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          {SCORE_OPTIONS.map((option) => {
-            const active = option.key === selectedMetric;
-            return (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => onSelectMetric(option.key)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  active ? "text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-100"
-                }`}
-                style={active ? { backgroundColor: option.color } : undefined}
-              >
-                {option.label}
-              </button>
-            );
-          })}
+      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="grid gap-3 md:grid-cols-2 xl:max-w-3xl xl:flex-1">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Display Score</p>
+            <div className="flex flex-wrap gap-2">
+              {SCORE_OPTIONS.map((option) => {
+                const active = option.key === selectedMetric;
+                return (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => onSelectMetric(option.key)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      active ? "text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                    }`}
+                    style={active ? { backgroundColor: option.color } : undefined}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Time Range</p>
+            <div className="flex flex-wrap gap-2">
+              {TREND_WINDOW_OPTIONS.map((option) => {
+                const active = option === selectedWindow;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => onSelectWindow(option)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      active ? "bg-slate-900 text-white shadow-sm" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {option} days
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
-        <div className="text-sm text-slate-500">Range fixed at 400-1600</div>
+
+        <div className="text-sm text-slate-500">{scoreRange.label}</div>
       </div>
 
-      <div className="overflow-x-auto pb-2">
+      <div ref={scrollContainerRef} className="overflow-x-auto pb-2">
         <svg viewBox={`0 0 ${width} ${height}`} className="h-[19rem] min-w-full">
           {yAxisTicks.map((tick) => {
             const y = topPadding + chartHeight - ((tick - minValue) / (maxValue - minValue)) * chartHeight;
@@ -229,7 +280,7 @@ function ScoreHistoryChart({
               <g key={tick}>
                 <line x1={leftPadding} y1={y} x2={width - rightPadding} y2={y} stroke="#e2e8f0" strokeDasharray="4 4" />
                 <text x={leftPadding - 12} y={y + 4} textAnchor="end" fontSize="11" fill="#64748b">
-                  {tick}
+                  {tick === 0 ? "No test taken" : tick}
                 </text>
               </g>
             );
@@ -271,13 +322,10 @@ function DailyTestsChart({
   onSelectWindow,
 }: {
   data: TestsPerDayPoint[];
-  selectedWindow: DailyTrendWindow;
-  onSelectWindow: (value: DailyTrendWindow) => void;
+  selectedWindow: TrendWindow;
+  onSelectWindow: (value: TrendWindow) => void;
 }) {
-  if (data.length === 0) {
-    return <ChartEmptyState message="No recent test activity yet." />;
-  }
-
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const width = Math.max(620, data.length * 56);
   const height = 220;
   const leftPadding = 44;
@@ -291,11 +339,24 @@ function DailyTestsChart({
   const labelIndexes = getVisibleLabelIndexes(data.length);
   const values = data.map((point) => point.tests);
 
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || selectedWindow !== 30) {
+      return;
+    }
+
+    container.scrollLeft = container.scrollWidth;
+  }, [data.length, selectedWindow]);
+
+  if (data.length === 0) {
+    return <ChartEmptyState message="No recent test activity yet." />;
+  }
+
   return (
     <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          {DAILY_TREND_OPTIONS.map((option) => {
+          {TREND_WINDOW_OPTIONS.map((option) => {
             const active = option === selectedWindow;
             return (
               <button
@@ -314,7 +375,7 @@ function DailyTestsChart({
         <div className="text-sm text-slate-500">Tests completed per day</div>
       </div>
 
-      <div className="overflow-x-auto pb-2">
+      <div ref={scrollContainerRef} className="overflow-x-auto pb-2">
         <svg viewBox={`0 0 ${width} ${height}`} className="h-[17rem] min-w-full">
           {yAxisTicks.map((tick) => {
             const y = topPadding + chartHeight - (tick / Math.max(1, maxValue)) * chartHeight;
@@ -371,14 +432,11 @@ function TimeSpentChart({
   selectedTotalMinutes,
 }: {
   data: TimeSpentPerDayPoint[];
-  selectedWindow: TimeWindow;
-  onSelectWindow: (value: TimeWindow) => void;
+  selectedWindow: TrendWindow;
+  onSelectWindow: (value: TrendWindow) => void;
   selectedTotalMinutes: number;
 }) {
-  if (data.length === 0) {
-    return <ChartEmptyState message="No recent study time yet." />;
-  }
-
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const width = Math.max(720, data.length * 56);
   const height = 220;
   const leftPadding = 48;
@@ -394,22 +452,33 @@ function TimeSpentChart({
   const labelIndexes = getVisibleLabelIndexes(data.length);
   const values = data.map((point) => point.minutes);
 
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || selectedWindow !== 30) {
+      return;
+    }
+
+    container.scrollLeft = container.scrollWidth;
+  }, [data.length, selectedWindow]);
+
+  if (data.length === 0) {
+    return <ChartEmptyState message="No recent study time yet." />;
+  }
+
   return (
     <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-sm text-slate-500">Minutes spent per day</div>
           <div className="mt-2 text-3xl font-bold text-slate-900">{formatMinutes(selectedTotalMinutes)}</div>
-          <div className="mt-1 text-sm text-slate-500">
-            {selectedWindow === 1 ? "Today" : `Total in the last ${selectedWindow} days`}
-          </div>
+          <div className="mt-1 text-sm text-slate-500">{`Total in the last ${selectedWindow} days`}</div>
         </div>
         <div className="rounded-2xl bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-sm">
           Daily study time
         </div>
       </div>
 
-      <div className="overflow-x-auto pb-2">
+      <div ref={scrollContainerRef} className="overflow-x-auto pb-2">
         <svg viewBox={`0 0 ${width} ${height}`} className="h-[17rem] min-w-full">
           {yAxisTicks.map((tick) => {
             const y = topPadding + chartHeight - (tick / Math.max(1, maxValue)) * chartHeight;
@@ -457,7 +526,7 @@ function TimeSpentChart({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {TIME_WINDOW_OPTIONS.map((option) => {
+        {TREND_WINDOW_OPTIONS.map((option) => {
           const active = option === selectedWindow;
           return (
             <button
@@ -468,7 +537,7 @@ function TimeSpentChart({
                 active ? "bg-slate-900 text-white shadow-sm" : "bg-white text-slate-600 hover:bg-slate-100"
               }`}
             >
-              {option === 1 ? "Today" : `${option} days`}
+              {option} days
             </button>
           );
         })}
@@ -491,12 +560,12 @@ function StatCard({
   accentClass: string;
 }) {
   return (
-    <div className="min-w-[15rem] flex-1 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm xl:max-w-[18rem]">
+    <div className="h-fit min-w-[14rem] flex-1 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm text-slate-500">{title}</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
-          <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
+          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
         </div>
         <div className={`rounded-2xl p-3 ${accentClass}`}>{icon}</div>
       </div>
@@ -506,11 +575,14 @@ function StatCard({
 
 export default function ParentDashboardPage() {
   const [data, setData] = useState<ParentDashboardResponse | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedScoreMetric, setSelectedScoreMetric] = useState<ScoreDisplayOption>("total");
-  const [selectedTimeWindow, setSelectedTimeWindow] = useState<TimeWindow>(30);
-  const [selectedDailyTrendWindow, setSelectedDailyTrendWindow] = useState<DailyTrendWindow>(30);
+  const [selectedScoreWindow, setSelectedScoreWindow] = useState<TrendWindow>(7);
+  const [selectedTimeWindow, setSelectedTimeWindow] = useState<TrendWindow>(7);
+  const [selectedDailyTrendWindow, setSelectedDailyTrendWindow] = useState<TrendWindow>(7);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -546,7 +618,39 @@ export default function ParentDashboardPage() {
       }
     };
 
-    fetchDashboard();
+    const fetchLeaderboard = async () => {
+      try {
+        setLeaderboardLoading(true);
+
+        const response = await fetch("/api/leaderboard", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const payload = (await response.json()) as LeaderboardResponse;
+
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to fetch leaderboard");
+        }
+
+        if (isMounted) {
+          setLeaderboard(payload.leaderboard ?? []);
+        }
+      } catch (err) {
+        console.error(err instanceof Error ? err.message : "Failed to fetch leaderboard");
+
+        if (isMounted) {
+          setLeaderboard([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLeaderboardLoading(false);
+        }
+      }
+    };
+
+    void fetchDashboard();
+    void fetchLeaderboard();
 
     return () => {
       isMounted = false;
@@ -561,6 +665,16 @@ export default function ParentDashboardPage() {
       })),
     [data]
   );
+
+  const filteredScoreHistory = useMemo(() => {
+    const points = data?.scoreHistory ?? [];
+
+    if (points.length <= selectedScoreWindow) {
+      return points;
+    }
+
+    return points.slice(-selectedScoreWindow);
+  }, [data?.scoreHistory, selectedScoreWindow]);
 
   const totalPages = Math.max(1, Math.ceil((data?.recentTests.length ?? 0) / TESTS_PER_PAGE));
 
@@ -588,13 +702,13 @@ export default function ParentDashboardPage() {
     return (
       <div className="min-h-screen bg-slate-50 px-6 py-10">
         <div className="mx-auto max-w-3xl rounded-3xl border border-red-200 bg-white p-10 text-center shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">Unable to load the Parent Portal</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Unable to load the Dashboard</h1>
           <p className="mt-3 text-slate-600">{error}</p>
           <Link
-            href="/auth/parent"
+            href="/dashboard"
             className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 font-medium text-white transition hover:bg-slate-800"
           >
-            Return to Parent Link Page
+            Retry Dashboard
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -610,7 +724,7 @@ export default function ParentDashboardPage() {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
               <Users className="h-8 w-8" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Parent Portal</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
             <p className="mt-4 text-base leading-7 text-slate-600">
               You have not linked a child account yet. Link your child&apos;s account to see scores, study
               activity, and recent test history.
@@ -633,7 +747,7 @@ export default function ParentDashboardPage() {
       <header className="border-b border-slate-200/80 bg-white/85 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Parent Dashboard</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Dashboard</p>
             <h1 className="mt-1 text-2xl font-bold tracking-tight">
               {data.child?.name ? `${data.child.name}'s Progress Dashboard` : "Student Progress Dashboard"}
             </h1>
@@ -643,7 +757,7 @@ export default function ParentDashboardPage() {
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-8">
-        <section className="mb-6 flex flex-wrap gap-4">
+        <section className="mb-6 grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,0.95fr)_minmax(20rem,1.2fr)]">
           <StatCard
             title="Highest Score"
             value={data.overview.highestScore}
@@ -652,65 +766,45 @@ export default function ParentDashboardPage() {
             accentClass="bg-amber-100"
           />
           <StatCard
-            title="Activity Last 30 Days"
-            value={data.overview.activityLast30Days}
-            subtitle="Practice tests completed recently"
-            icon={<CalendarRange className="h-5 w-5 text-sky-700" />}
-            accentClass="bg-sky-100"
-          />
-          <StatCard
             title="Tests Completed"
             value={data.overview.testsCompleted}
             subtitle="All completed full-length tests"
             icon={<Activity className="h-5 w-5 text-emerald-700" />}
             accentClass="bg-emerald-100"
           />
+          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Activity Last 30 Days</h2>
+              </div>
+              <div className="rounded-2xl bg-sky-100 p-3">
+                <CalendarRange className="h-5 w-5 text-sky-700" />
+              </div>
+            </div>
+            <div className="mt-4 rounded-3xl border border-slate-100 bg-slate-50/80 px-4 py-5">
+              <ActivityHeatmap results={heatmapResults} />
+            </div>
+          </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(21rem,0.95fr)]">
+        <section className="mt-6">
           <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-slate-900">Score History</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Switch between Reading and Writing, Math, and Total without stacking all three on one chart.
+                Switch between Reading and Writing, Math, and Total, then focus on the last 7, 15, or 30 days.
               </p>
             </div>
             <ScoreHistoryChart
-              data={data.scoreHistory}
+              data={filteredScoreHistory}
               selectedMetric={selectedScoreMetric}
+              selectedWindow={selectedScoreWindow}
               onSelectMetric={setSelectedScoreMetric}
+              onSelectWindow={setSelectedScoreWindow}
             />
           </div>
-
-          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm xl:ml-auto xl:w-full xl:max-w-[24rem]">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">Activity Last 30 Days</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Heatmap of daily study activity across the most recent 30 days.
-                </p>
-              </div>
-              <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">30 days</div>
-            </div>
-            <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-4">
-              <ActivityHeatmap results={heatmapResults} />
-            </div>
-            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              Last active:{" "}
-              <span className="font-semibold text-slate-900">
-                {data.overview.lastActiveAt
-                  ? new Date(data.overview.lastActiveAt).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })
-                  : "No activity yet"}
-              </span>
-            </div>
-          </div>
         </section>
+
 
         <section className="mt-6">
           <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
@@ -727,6 +821,11 @@ export default function ParentDashboardPage() {
             />
           </div>
         </section>
+
+        <section className="mt-6">
+          {leaderboardLoading ? <LeaderboardTableSkeleton /> : <LeaderboardTable leaderboard={leaderboard} />}
+        </section>
+
 
         <section className="mt-6">
           <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
