@@ -31,6 +31,9 @@ export type ReviewResult = {
   date?: string;
   createdAt?: string;
   score?: number;
+  totalScore?: number;
+  readingScore?: number;
+  mathScore?: number;
   isSectional?: boolean;
   sectionalSubject?: string;
   sectionalModule?: number;

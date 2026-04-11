@@ -55,7 +55,8 @@ export function getReviewScoreLabel(result: ReviewResult) {
     return `${result.answers.filter((answer) => answer.isCorrect).length} / ${result.answers.length}`;
   }
 
-  return result.score;
+  const rawScore = result.totalScore ?? result.score ?? 0;
+  return Math.max(400, rawScore);
 }
 
 export function groupFullLengthAnswers(result: ReviewResult) {

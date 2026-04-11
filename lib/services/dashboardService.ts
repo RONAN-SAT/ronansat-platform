@@ -2,8 +2,9 @@ import { API_PATHS } from "@/lib/apiPaths";
 import api from "@/lib/axios";
 import type { LeaderboardEntry, UserResultSummary, UserStatsSummary } from "@/types/testLibrary";
 
-export async function fetchDashboardUserResults(days: number) {
-  const statsRes = await api.get(`${API_PATHS.RESULTS}?days=${days}`);
+export async function fetchDashboardUserResults(days?: number) {
+  const query = typeof days === "number" ? `?days=${days}` : "";
+  const statsRes = await api.get(`${API_PATHS.RESULTS}${query}`);
   return (statsRes.data.results || []) as UserResultSummary[];
 }
 

@@ -16,6 +16,7 @@ export function useReviewPageController() {
   const searchParams = useSearchParams();
   const urlMode = searchParams.get("mode");
   const urlTestId = searchParams.get("testId");
+  const urlResultId = searchParams.get("resultId");
   const initialResultsCacheRef = useRef<ReviewResult[]>([]);
   const [hasHydratedClientCache, setHasHydratedClientCache] = useState(false);
   const [results, setResults] = useState<ReviewResult[]>([]);
@@ -107,6 +108,16 @@ export function useReviewPageController() {
       return;
     }
 
+    if (urlResultId && !isManuallySelected) {
+      const matchForResult = filteredResults.find((result) => result._id === urlResultId);
+      if (matchForResult) {
+        if (activeTestId !== matchForResult._id) {
+          setActiveTestId(matchForResult._id);
+        }
+        return;
+      }
+    }
+
     if (urlTestId && !isManuallySelected) {
       const matchForUrl = filteredResults.find((r) => {
         const tId = typeof r.testId === "object" ? r.testId?._id : r.testId;
@@ -125,7 +136,7 @@ export function useReviewPageController() {
     } else if (filteredResults.length === 0) {
       setActiveTestId(null);
     }
-  }, [activeTestId, filteredResults, results.length, urlTestId, isManuallySelected]);
+  }, [activeTestId, filteredResults, results.length, urlResultId, urlTestId, isManuallySelected]);
 
   const activeTest = useMemo(
     () => filteredResults.find((result) => result._id === activeTestId) || filteredResults[0],

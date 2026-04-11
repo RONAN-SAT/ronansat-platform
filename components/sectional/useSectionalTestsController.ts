@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { getClientCache, setClientCache } from "@/lib/clientCache";
 import { fetchDashboardUserResults } from "@/lib/services/dashboardService";
 import {
-  fetchTestsPage,
+  fetchAllTests,
   filterSectionalTestsBySubject,
   filterTestsByPeriod,
   getTestsClientCacheKey,
@@ -16,7 +16,7 @@ import type { CachedTestsPayload, SortOption, TestListItem, UserResultSummary } 
 
 export function useSectionalTestsController() {
   const { data: session, status } = useSession();
-  const limit = 6;
+  const pageSize = 15;
   const initialTestsCacheRef = useRef<CachedTestsPayload | undefined>(undefined);
   const [hasHydratedClientCache, setHasHydratedClientCache] = useState(false);
   const [tests, setTests] = useState<TestListItem[]>([]);
@@ -25,24 +25,22 @@ export function useSectionalTestsController() {
   const [userResults, setUserResults] = useState<UserResultSummary[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [selectedPeriod, setSelectedPeriod] = useState("All");
   const [subjectFilter, setSubjectFilter] = useState<"reading" | "math">("reading");
 
   const hasCachedSectionalView = hasHydratedClientCache && Boolean(initialTestsCacheRef.current);
 
   useEffect(() => {
-    const cachedTests = getClientCache<CachedTestsPayload>(getTestsClientCacheKey(1, limit, "newest"));
+    const cachedTests = getClientCache<CachedTestsPayload>(getTestsClientCacheKey(1, 0, "newest"));
     initialTestsCacheRef.current = cachedTests;
 
     if (cachedTests) {
       setTests(cachedTests.tests);
-      setTotalPages(cachedTests.totalPages);
       setLoading(false);
     }
 
     setHasHydratedClientCache(true);
-  }, [limit]);
+  }, []);
 
   useEffect(() => {
     setSelectedPeriod("All");
@@ -58,6 +56,11 @@ export function useSectionalTestsController() {
     () => filterTestsByPeriod(testsWithSubject, selectedPeriod),
     [selectedPeriod, testsWithSubject],
   );
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredTests.length / pageSize)), [filteredTests.length, pageSize]);
+  const paginatedTests = useMemo(
+    () => filteredTests.slice((page - 1) * pageSize, page * pageSize),
+    [filteredTests, page, pageSize],
+  );
 
   useEffect(() => {
     if (!session) {
@@ -66,7 +69,7 @@ export function useSectionalTestsController() {
 
     const loadUserResults = async () => {
       try {
-        const nextResults = await fetchDashboardUserResults(365);
+        const nextResults = await fetchDashboardUserResults();
         setUserResults(nextResults);
       } catch (error) {
         console.error("Failed to load results", error);
@@ -77,6 +80,12 @@ export function useSectionalTestsController() {
   }, [session]);
 
   useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  useEffect(() => {
     if (!hasHydratedClientCache) {
       return;
     }
@@ -84,12 +93,11 @@ export function useSectionalTestsController() {
     let cancelled = false;
 
     const loadTests = async () => {
-      const cacheKey = getTestsClientCacheKey(page, limit, sortOption);
+      const cacheKey = getTestsClientCacheKey(1, 0, sortOption);
       const cachedTests = getClientCache<CachedTestsPayload>(cacheKey);
 
       if (cachedTests) {
         setTests(cachedTests.tests);
-        setTotalPages(cachedTests.totalPages);
         setLoading(false);
         setTestsRefreshing(true);
       } else {
@@ -98,14 +106,13 @@ export function useSectionalTestsController() {
       }
 
       try {
-        const nextPayload = await fetchTestsPage(page, limit, sortOption);
+        const nextPayload = await fetchAllTests(sortOption);
 
         if (cancelled) {
           return;
         }
 
         setTests(nextPayload.tests);
-        setTotalPages(nextPayload.totalPages);
         setClientCache(cacheKey, nextPayload);
       } catch (error) {
         console.error("Failed to fetch tests", error);
@@ -122,7 +129,7 @@ export function useSectionalTestsController() {
     return () => {
       cancelled = true;
     };
-  }, [hasHydratedClientCache, limit, page, sortOption]);
+  }, [hasHydratedClientCache, sortOption]);
 
   return {
     status,
@@ -136,7 +143,7 @@ export function useSectionalTestsController() {
     selectedPeriod,
     subjectFilter,
     uniquePeriods,
-    filteredTests,
+    filteredTests: paginatedTests,
     setSortOption,
     setPage,
     setSelectedPeriod,

@@ -96,7 +96,8 @@ export const testService = {
 
     await dbConnect();
 
-    const skip = (page - 1) * limit;
+    const usePagination = Number.isFinite(limit) && limit > 0;
+    const skip = usePagination ? (page - 1) * limit : 0;
     const sortDirection = normalizedSortOrder === "asc" ? 1 : -1;
     const sortObj: Record<SortableTestField, 1 | -1> = {
       createdAt: normalizedSortBy === "createdAt" ? sortDirection : -1,
@@ -104,7 +105,13 @@ export const testService = {
     };
 
     const totalTests = await Test.countDocuments({});
-    const tests = await Test.find({}).sort(sortObj).skip(skip).limit(limit).lean();
+    let testsQuery = Test.find({}).sort(sortObj).skip(skip);
+
+    if (usePagination) {
+      testsQuery = testsQuery.limit(limit);
+    }
+
+    const tests = await testsQuery.lean();
     const questionCountsData = await getQuestionCountsForTests(tests.map((test) => test._id as Types.ObjectId));
     const testsWithCounts = attachQuestionCounts(tests, questionCountsData);
 
@@ -113,8 +120,8 @@ export const testService = {
       pagination: {
         total: totalTests,
         page,
-        limit,
-        totalPages: Math.ceil(totalTests / limit),
+        limit: usePagination ? limit : totalTests,
+        totalPages: usePagination ? Math.ceil(totalTests / limit) : 1,
       },
     };
 

@@ -69,6 +69,7 @@ function AnswerGrid({
 
 function ReviewSummaryCard({ testType, activeTest }: { testType: "full" | "sectional"; activeTest: ReviewResult }) {
   const stats = getReviewStats(activeTest.answers || []);
+  const fullLengthScore = Math.max(400, activeTest.totalScore ?? activeTest.score ?? 0);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -82,7 +83,7 @@ function ReviewSummaryCard({ testType, activeTest }: { testType: "full" | "secti
         {testType === "full" ? (
           <div className="flex items-center gap-2 self-start rounded-xl border border-amber-200 bg-amber-50 px-4 py-2">
             <Trophy className="h-4 w-4 text-amber-500" />
-            <span className="text-sm font-bold text-amber-700">Score: {activeTest.score}</span>
+            <span className="text-sm font-bold text-amber-700">Score: {fullLengthScore}</span>
           </div>
         ) : null}
       </div>

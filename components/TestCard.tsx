@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock, GraduationCap } from "lucide-react";
+import { Clock, GraduationCap, RotateCcw } from "lucide-react";
 
 import DownloadPdfButton from "@/components/DownloadPdfButton";
 import type { TestListItem, UserResultSummary } from "@/types/testLibrary";
@@ -9,6 +9,39 @@ interface TestCardProps {
   isSectional?: boolean;
   subjectFilter?: string;
   userResults?: UserResultSummary[];
+}
+
+function getResultTestId(result: UserResultSummary) {
+  if (typeof result.testId === "string") {
+    return result.testId;
+  }
+
+  return result.testId?._id ?? "";
+}
+
+function getLatestResult(results: UserResultSummary[]) {
+  return [...results].sort(
+    (left, right) =>
+      new Date(right.createdAt ?? right.updatedAt ?? right.date ?? 0).getTime() -
+      new Date(left.createdAt ?? left.updatedAt ?? left.date ?? 0).getTime(),
+  )[0] ?? null;
+}
+
+function getFullLengthScore(result: UserResultSummary | null) {
+  const rawScore = result?.totalScore ?? result?.score ?? 0;
+  return Math.max(400, rawScore);
+}
+
+function getSectionalScore(result: UserResultSummary | null) {
+  if (!result) {
+    return 0;
+  }
+
+  if (result.answers) {
+    return result.answers.filter((answer) => answer.isCorrect).length;
+  }
+
+  return result.score || result.totalScore || 0;
 }
 
 export default function TestCard({
@@ -74,30 +107,35 @@ export default function TestCard({
     return null;
   }
 
+  const latestFullLengthResult = getLatestResult(
+    userResults.filter((result) => getResultTestId(result) === test._id && !result.isSectional),
+  );
+
   const getModuleResult = (moduleNumber: number) =>
-    userResults.find(
-      (result) =>
-        result.testId === test._id &&
-        result.sectionalSubject === formattedSectionName &&
-        result.sectionalModule === moduleNumber
+    getLatestResult(
+      userResults.filter(
+        (result) =>
+          getResultTestId(result) === test._id &&
+          result.sectionalSubject === formattedSectionName &&
+          result.sectionalModule === moduleNumber,
+      ),
     );
 
   const mod1Result = isSectional ? getModuleResult(1) : null;
   const mod2Result = isSectional ? getModuleResult(2) : null;
 
-  const getScore = (result: UserResultSummary | null) => {
-    if (result?.answers) {
-      return result.answers.filter((answer) => answer.isCorrect).length;
-    }
-
-    return result?.score || 0;
-  };
-
   return (
     <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:border-blue-200">
       <div className="flex-1 p-5">
         <div className="mb-3 flex items-start justify-between">
-          <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-700">{test.title}</h3>
+          <div>
+            <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-700">{test.title}</h3>
+            {!isSectional && latestFullLengthResult ? (
+              <div className="mt-2 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                Last score: {getFullLengthScore(latestFullLengthResult)}
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div className="mt-4 space-y-2 text-sm text-slate-600">
@@ -115,13 +153,15 @@ export default function TestCard({
       <div className="mt-auto border-t border-slate-100 bg-slate-50 p-4">
         {isSectional ? (
           <div className="flex flex-col gap-3">
-            <div className="group/btn relative">
-              {mod1Result && mod1Count > 0 && (
-                <div className="absolute -top-3 left-1/2 z-10 w-max -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-600 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                  Previous Result: {getScore(mod1Result)} / {subjectFilter === "reading" ? 27 : 22}
-                </div>
-              )}
-
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Module 1</span>
+                {mod1Result && mod1Count > 0 ? (
+                  <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                    Last score: {getSectionalScore(mod1Result)} / {subjectFilter === "reading" ? 27 : 22}
+                  </span>
+                ) : null}
+              </div>
               {mod1Count === 0 ? (
                 <button
                   title="Coming Soon"
@@ -130,27 +170,41 @@ export default function TestCard({
                 >
                   Module 1 (Coming Soon)
                 </button>
+              ) : mod1Result?._id ? (
+                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-3">
+                  <Link
+                    href={`/review?mode=sectional&resultId=${mod1Result._id}`}
+                    className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-center font-semibold text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                  >
+                    Review
+                  </Link>
+                  <Link
+                    href={`/test/${test._id}?section=${formattedSectionName}&module=1&mode=sectional`}
+                    className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                    aria-label="Retake sectional module 1"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Link>
+                </div>
               ) : (
                 <Link
                   href={`/test/${test._id}?section=${formattedSectionName}&module=1&mode=sectional`}
-                  className={`relative block w-full rounded-lg border px-4 py-2.5 text-center font-medium transition-all ${
-                    mod1Result
-                      ? "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100"
-                      : "border-transparent bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md"
-                  }`}
+                  className="block w-full rounded-lg bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
                 >
-                  {mod1Result ? "Retake Module 1" : "Start Module 1"}
+                  Start Module 1
                 </Link>
               )}
             </div>
 
-            <div className="group/btn relative mt-2">
-              {mod2Result && mod2Count > 0 && (
-                <div className="absolute -top-3 left-1/2 z-10 w-max -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-600 bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                  Previous Result: {getScore(mod2Result)} / {subjectFilter === "reading" ? 27 : 22}
-                </div>
-              )}
-
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Module 2</span>
+                {mod2Result && mod2Count > 0 ? (
+                  <span className="inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                    Last score: {getSectionalScore(mod2Result)} / {subjectFilter === "reading" ? 27 : 22}
+                  </span>
+                ) : null}
+              </div>
               {mod2Count === 0 ? (
                 <button
                   title="Coming Soon"
@@ -159,16 +213,28 @@ export default function TestCard({
                 >
                   Module 2 (Coming Soon)
                 </button>
+              ) : mod2Result?._id ? (
+                <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-3">
+                  <Link
+                    href={`/review?mode=sectional&resultId=${mod2Result._id}`}
+                    className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-center font-semibold text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                  >
+                    Review
+                  </Link>
+                  <Link
+                    href={`/test/${test._id}?section=${formattedSectionName}&module=2&mode=sectional`}
+                    className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                    aria-label="Retake sectional module 2"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Link>
+                </div>
               ) : (
                 <Link
                   href={`/test/${test._id}?section=${formattedSectionName}&module=2&mode=sectional`}
-                  className={`relative block w-full rounded-lg border px-4 py-2.5 text-center font-medium transition-all ${
-                    mod2Result
-                      ? "border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100"
-                      : "border-transparent bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md"
-                  }`}
+                  className="block w-full rounded-lg bg-blue-600 px-4 py-2 text-center font-medium text-white hover:bg-blue-700"
                 >
-                  {mod2Result ? "Retake Module 2" : "Start Module 2"}
+                  Start Module 2
                 </Link>
               )}
             </div>
@@ -178,6 +244,25 @@ export default function TestCard({
               testName={test.title}
               sectionName={formattedSectionName}
             />
+          </div>
+        ) : latestFullLengthResult?._id ? (
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_68px] gap-3">
+              <Link
+                href={`/review?mode=full&resultId=${latestFullLengthResult._id}`}
+                className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-center font-semibold text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+              >
+                Review
+              </Link>
+              <Link
+                href={`/test/${test._id}?mode=full`}
+                className="flex items-center justify-center rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                aria-label="Retake full-length test"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Link>
+            </div>
+            <DownloadPdfButton testId={test._id} testName={test.title} />
           </div>
         ) : (
           <div className="flex flex-col gap-2">

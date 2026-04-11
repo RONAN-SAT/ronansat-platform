@@ -75,6 +75,14 @@ function buildDateFilter(days?: number) {
   return { $gte: dateLimit };
 }
 
+function clampFullLengthSectionScore(score: number, hasSection: boolean) {
+  if (!hasSection) {
+    return 0;
+  }
+
+  return Math.max(200, Math.min(800, score));
+}
+
 export const resultService = {
   async createResult(userId: string, data: unknown) {
     const validatedData = ResultValidationSchema.parse(data);
@@ -151,27 +159,32 @@ export const resultService = {
       readingScore = validatedData.sectionalSubject === "Reading and Writing" ? correctCount : 0;
       mathScore = validatedData.sectionalSubject === "Math" ? correctCount : 0;
     } else {
-      let earnedReadingPoints = 0;
-      let earnedMathPoints = 0;
+      let readingWrongPoints = 0;
+      let mathWrongPoints = 0;
+      let hasReadingSection = false;
+      let hasMathSection = false;
 
       gradedAnswers.forEach((answer) => {
-        if (!answer.isCorrect) {
-          return;
-        }
-
         const question = questionMap.get(answer.questionId.toString());
-        const points = question?.points || 0;
+        const points = question?.points ?? 0;
 
         if (question?.section === "Reading and Writing") {
-          earnedReadingPoints += points;
+          hasReadingSection = true;
+          if (!answer.isCorrect) {
+            readingWrongPoints += points;
+          }
         } else if (question?.section === "Math") {
-          earnedMathPoints += points;
+          hasMathSection = true;
+          if (!answer.isCorrect) {
+            mathWrongPoints += points;
+          }
         }
       });
 
-      readingScore = Math.min(200 + earnedReadingPoints, 800);
-      mathScore = Math.min(200 + earnedMathPoints, 800);
+      readingScore = clampFullLengthSectionScore(800 - readingWrongPoints, hasReadingSection);
+      mathScore = clampFullLengthSectionScore(800 - mathWrongPoints, hasMathSection);
       score = readingScore + mathScore;
+      totalScore = score;
       sectionBreakdown = {
         readingAndWriting: readingScore,
         math: mathScore,

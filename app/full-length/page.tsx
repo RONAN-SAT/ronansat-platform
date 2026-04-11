@@ -10,6 +10,7 @@ export default function FullLengthDashboard() {
     hasCachedDashboardView,
     testsLoading,
     testsRefreshing,
+    userResults,
     sortOption,
     page,
     totalPages,
@@ -36,6 +37,7 @@ export default function FullLengthDashboard() {
             loading
             filteredTests={[]}
             totalPages={1}
+            userResults={[]}
           />
         </main>
       </div>
@@ -66,6 +68,7 @@ export default function FullLengthDashboard() {
           syncing={testsRefreshing}
           filteredTests={filteredTests}
           totalPages={totalPages}
+          userResults={userResults}
         />
       </main>
     </div>

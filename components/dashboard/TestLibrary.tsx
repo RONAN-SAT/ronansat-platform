@@ -5,7 +5,7 @@ import { BookOpen } from "lucide-react";
 
 import TestCard from "@/components/TestCard";
 import TestCardSkeleton from "@/components/TestCardSkeleton";
-import type { SortOption, TestListItem } from "@/types/testLibrary";
+import type { SortOption, TestListItem, UserResultSummary } from "@/types/testLibrary";
 
 interface TestLibraryProps {
   uniquePeriods: string[];
@@ -19,6 +19,7 @@ interface TestLibraryProps {
   syncing?: boolean;
   filteredTests: TestListItem[];
   totalPages: number;
+  userResults: UserResultSummary[];
 }
 
 export default function TestLibrary({
@@ -33,13 +34,14 @@ export default function TestLibrary({
   syncing = false,
   filteredTests,
   totalPages,
+  userResults,
 }: TestLibraryProps) {
   return (
     <section>
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="w-full md:w-1/4 flex-shrink-0">
-          <div className="bg-white rounded-xl border border-slate-200 p-5 sticky top-24">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 pb-3 border-b border-slate-100">
+      <div className="flex flex-col gap-8 md:flex-row">
+        <div className="w-full flex-shrink-0 md:w-1/4">
+          <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-5">
+            <h2 className="mb-4 border-b border-slate-100 pb-3 text-lg font-bold text-slate-800">
               Filter by Date
             </h2>
             <div className="flex flex-col gap-2">
@@ -50,10 +52,10 @@ export default function TestLibrary({
                     setSelectedPeriod(period);
                     setPage(1);
                   }}
-                  className={`cursor-pointer text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`cursor-pointer rounded-lg px-4 py-2.5 text-left text-sm font-medium transition-all ${
                     selectedPeriod === period
-                      ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                      : "text-slate-600 hover:bg-slate-50 border border-transparent"
+                      ? "border border-blue-200 bg-blue-50 text-blue-700 shadow-sm"
+                      : "border border-transparent text-slate-600 hover:bg-slate-50"
                   }`}
                 >
                   {period === "All" ? "All Tests" : period}
@@ -64,10 +66,10 @@ export default function TestLibrary({
         </div>
 
         <div className="w-full md:w-3/4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-transparent">
+          <div className="mb-6 flex flex-col items-start justify-between gap-4 border-b border-transparent sm:flex-row sm:items-center">
             <div className="flex items-center gap-3">
               <h2 className="text-2xl font-bold text-slate-900">Practice Test Library</h2>
-              {syncing && <span className="text-sm text-slate-500 animate-pulse">Syncing...</span>}
+              {syncing ? <span className="animate-pulse text-sm text-slate-500">Syncing...</span> : null}
             </div>
 
             <div className="flex items-center gap-2">
@@ -81,7 +83,7 @@ export default function TestLibrary({
                   setSortOption(e.target.value as SortOption);
                   setPage(1);
                 }}
-                className="cursor-pointer bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none"
+                className="block cursor-pointer rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -92,30 +94,30 @@ export default function TestLibrary({
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((index) => (
                 <TestCardSkeleton key={index} />
               ))}
             </div>
           ) : filteredTests.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-xl border border-slate-200 border-dashed">
-              <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <div className="rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
+              <BookOpen className="mx-auto mb-4 h-12 w-12 text-slate-300" />
               <h3 className="text-lg font-medium text-slate-900">No tests found for this period</h3>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {filteredTests.map((test) => (
-                  <TestCard key={test._id} test={test} />
+                  <TestCard key={test._id} test={test} userResults={userResults} />
                 ))}
               </div>
 
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center mt-8 gap-4">
+              {totalPages > 1 ? (
+                <div className="mt-8 flex items-center justify-center gap-4">
                   <button
                     onClick={() => setPage((p: number) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="cursor-pointer px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Previous
                   </button>
@@ -125,12 +127,12 @@ export default function TestLibrary({
                   <button
                     onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Next
                   </button>
                 </div>
-              )}
+              ) : null}
             </>
           )}
         </div>

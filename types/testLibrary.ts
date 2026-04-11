@@ -34,6 +34,9 @@ export type UserResultSummary = {
   answers?: UserResultAnswerSummary[];
   score?: number;
   isSectional?: boolean;
+  totalScore?: number;
+  readingScore?: number;
+  mathScore?: number;
   createdAt?: string;
   date?: string;
   updatedAt?: string;

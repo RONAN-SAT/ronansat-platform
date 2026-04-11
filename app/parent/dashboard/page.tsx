@@ -745,19 +745,36 @@ export default function ParentDashboardPage() {
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,_#f8fbff_0%,_#ffffff_38%,_#f8fafc_100%)] text-slate-900">
       <header className="border-b border-slate-200/80 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-6 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">Dashboard</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight">
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">
               {data.child?.name ? `${data.child.name}'s Progress Dashboard` : "Student Progress Dashboard"}
             </h1>
-            <p className="mt-1 text-sm text-slate-500">{data.child?.email}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+              Track score progress, study consistency, test volume, and recent performance without digging through multiple pages.
+            </p>
+            <p className="mt-1 text-sm text-slate-400">{data.child?.email}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:min-w-[300px]">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Last Active</div>
+              <div className="mt-2 text-sm font-semibold text-slate-900">
+                {data.overview.lastActiveAt ? new Date(data.overview.lastActiveAt).toLocaleDateString() : "No activity yet"}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Study Time</div>
+              <div className="mt-2 text-sm font-semibold text-slate-900">
+                {formatMinutes(data.timeSpentByWindow[String(selectedTimeWindow)] ?? 0)}
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-6 py-8">
-        <section className="mb-6 grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,0.95fr)_minmax(20rem,1.2fr)]">
+        <section className="mb-8 grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,0.92fr)_minmax(20rem,1.15fr)]">
           <StatCard
             title="Highest Score"
             value={data.overview.highestScore}
@@ -776,6 +793,7 @@ export default function ParentDashboardPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Activity Last 30 Days</h2>
+                <p className="mt-1 text-sm text-slate-500">A quick view of recent study consistency.</p>
               </div>
               <div className="rounded-2xl bg-sky-100 p-3">
                 <CalendarRange className="h-5 w-5 text-sky-700" />
@@ -787,7 +805,7 @@ export default function ParentDashboardPage() {
           </div>
         </section>
 
-        <section className="mt-6">
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)]">
           <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-slate-900">Score History</h2>
@@ -803,31 +821,7 @@ export default function ParentDashboardPage() {
               onSelectWindow={setSelectedScoreWindow}
             />
           </div>
-        </section>
 
-
-        <section className="mt-6">
-          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-5">
-              <h2 className="text-lg font-semibold text-slate-900">Test Volume Trend</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Review how the number of tests completed changes day by day across 7, 15, or 30 days.
-              </p>
-            </div>
-            <DailyTestsChart
-              data={data.testsPerDay[String(selectedDailyTrendWindow)] ?? []}
-              selectedWindow={selectedDailyTrendWindow}
-              onSelectWindow={setSelectedDailyTrendWindow}
-            />
-          </div>
-        </section>
-
-        <section className="mt-6">
-          {leaderboardLoading ? <LeaderboardTableSkeleton /> : <LeaderboardTable leaderboard={leaderboard} />}
-        </section>
-
-
-        <section className="mt-6">
           <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="mb-5">
               <h2 className="text-lg font-semibold text-slate-900">Time Spent Trend</h2>
@@ -841,6 +835,26 @@ export default function ParentDashboardPage() {
               onSelectWindow={setSelectedTimeWindow}
               selectedTotalMinutes={data.timeSpentByWindow[String(selectedTimeWindow)] ?? 0}
             />
+          </div>
+        </section>
+
+        <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5">
+              <h2 className="text-lg font-semibold text-slate-900">Test Volume Trend</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Review how the number of tests completed changes day by day across 7, 15, or 30 days.
+              </p>
+            </div>
+            <DailyTestsChart
+              data={data.testsPerDay[String(selectedDailyTrendWindow)] ?? []}
+              selectedWindow={selectedDailyTrendWindow}
+              onSelectWindow={setSelectedDailyTrendWindow}
+            />
+          </div>
+
+          <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+            {leaderboardLoading ? <LeaderboardTableSkeleton /> : <LeaderboardTable leaderboard={leaderboard} />}
           </div>
         </section>
 
