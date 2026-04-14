@@ -28,6 +28,11 @@ function buildFileName(testName: string, sectionName?: string) {
   return `${joined || "practice_test"}.pdf`;
 }
 
+function buildDocumentTitle(testName: string, sectionName?: string) {
+  const suffix = sectionName ? ` - ${sectionName}` : "";
+  return `RONAN SAT - ${testName}${suffix}`;
+}
+
 async function waitForPrintableAssets(iframeWindow: Window) {
   const documentRef = iframeWindow.document;
   const images = Array.from(documentRef.images);
@@ -76,6 +81,7 @@ export default function DownloadPdfButton({
 
   const handleDownload = async () => {
     let iframe: HTMLIFrameElement | null = null;
+    let originalDocumentTitle: string | null = null;
 
     try {
       setIsDownloading(true);
@@ -97,12 +103,13 @@ export default function DownloadPdfButton({
 
       const data = (await response.json()) as PdfDataResponse;
       const fileName = buildFileName(testName || data.testTitle, sectionName || data.sectionName);
+      const documentTitle = buildDocumentTitle(testName || data.testTitle, sectionName || data.sectionName);
       const htmlString = generatePDFTemplate({
         testId: data.testId,
         testTitle: data.testTitle,
         questions: data.questions,
         sectionName: data.sectionName,
-        documentTitle: fileName.replace(/\.pdf$/i, ""),
+        documentTitle,
         assetBaseUrl: window.location.origin,
       });
 
@@ -120,6 +127,10 @@ export default function DownloadPdfButton({
       await waitForPrintableAssets(iframeWindow);
 
       const cleanup = () => {
+        if (originalDocumentTitle !== null) {
+          document.title = originalDocumentTitle;
+          originalDocumentTitle = null;
+        }
         iframe?.remove();
         iframe = null;
       };
@@ -127,10 +138,15 @@ export default function DownloadPdfButton({
       iframeWindow.addEventListener("afterprint", cleanup, { once: true });
       window.setTimeout(cleanup, 60_000);
 
+      originalDocumentTitle = document.title;
+      document.title = documentTitle;
       iframeWindow.focus();
       iframeWindow.print();
     } catch (error) {
       console.error("Failed to prepare print PDF", error);
+      if (originalDocumentTitle !== null) {
+        document.title = originalDocumentTitle;
+      }
       iframe?.remove();
       window.alert(error instanceof Error ? error.message : "An error occurred while preparing the PDF.");
     } finally {
