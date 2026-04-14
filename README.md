@@ -304,6 +304,31 @@ npx wrangler deploy
 
 The repo now includes `wrangler.jsonc` and `open-next.config.ts`, and uses `wrangler@4.82.2` plus `@opennextjs/cloudflare@1.19.1`.
 
+### GitHub Actions deploy
+
+The repo now includes `.github/workflows/deploy-cloudflare-workers.yml` for GitHub-hosted CI/CD.
+
+For this workflow to work, add these repository secrets in GitHub:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+- `MONGODB_URI`
+- `NEXTAUTH_SECRET`
+- `NEXTAUTH_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `EMAIL_USER`
+- `EMAIL_PASS`
+- `GEMINI_API_KEY`
+- `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
+- `NEXT_PUBLIC_DESMOS_API_KEY`
+- `REDIS_URL`
+- `CLOUDINARY_URL`
+
+The workflow runs on pushes to `main` and on manual dispatch. It installs dependencies, restores the Next.js build cache, runs `bun run lint`, builds with `bun run build:cf`, and deploys with `npx wrangler deploy`.
+
+`wrangler.jsonc` sets `keep_vars: true`, so Cloudflare dashboard runtime variables are preserved on deploy instead of being overwritten by the repo config.
+
 Before deploying, make sure the Worker environment has the same required secrets as your app build, especially:
 
 - `MONGODB_URI`

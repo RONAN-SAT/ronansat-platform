@@ -1,12 +1,10 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "ronansat-edtech",
+  "keep_vars": true,
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-04-14",
   "compatibility_flags": ["nodejs_compat"],
-  "build": {
-    "command": "npx opennextjs-cloudflare build"
-  },
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
