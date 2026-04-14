@@ -66,7 +66,6 @@ export default function TestHeader({
   const themePreset = getTestingRoomThemePreset(theme);
   const headerTheme = themePreset.header;
   const submitButtonLabel = buttonText || (isLastModule ? "Submit Test" : "Next Module");
-  const isFinalSubmit = submitButtonLabel === "Submit Test" || isLastModule;
   const submitButtonClass = headerTheme.submitPrimaryClass;
 
   const formatTime = (seconds: number) => {
@@ -133,7 +132,6 @@ export default function TestHeader({
             </AlertDialogTrigger>
 
             <ConfirmDialogContent
-              isFinalSubmit={isFinalSubmit}
               title={confirmTitle || (isLastModule ? "Submit Entire Test?" : "Finish This Module?")}
               description={
                 confirmDescription ||
