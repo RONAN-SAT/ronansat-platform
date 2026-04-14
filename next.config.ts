@@ -1,5 +1,4 @@
 import { withSentryConfig } from "@sentry/nextjs";
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 import type { NextConfig } from "next";
 
@@ -47,5 +46,3 @@ const sentryConfig = withSentryConfig(nextConfig, {
 });
 
 export default sentryConfig;
-
-initOpenNextCloudflareForDev();
