@@ -33,7 +33,6 @@ export function FlashCardOverlay({
   onPrevious,
   onNext,
 }: FlashCardOverlayProps) {
-  const lastPlayedKeyRef = useRef<string | null>(null);
   const prefetchedAudioRef = useRef<Set<string>>(new Set());
   const resolvedMeaning = meaning || "No definition yet. Fetch one from the dictionary or write your own note.";
   const cardHeightClass =
@@ -47,13 +46,6 @@ export function FlashCardOverlay({
     if (!isAnswerVisible) {
       return;
     }
-
-    const playbackKey = `${currentIndex}:${audioUrl ?? vocabulary}`;
-    if (lastPlayedKeyRef.current === playbackKey) {
-      return;
-    }
-
-    lastPlayedKeyRef.current = playbackKey;
 
     playVocabPronunciation(vocabulary, audioUrl);
   }, [audioUrl, currentIndex, isAnswerVisible, vocabulary]);
