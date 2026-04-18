@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { CheckCircle, Lock, MonitorPlay, Save, TriangleAlert, User } from "lucide-react";
+import { CheckCircle, Lock, MonitorPlay, TriangleAlert, User } from "lucide-react";
 
 import Loading from "@/components/Loading";
 import { useTestingRoomTheme } from "@/hooks/useTestingRoomTheme";
@@ -15,14 +15,10 @@ import {
 } from "@/lib/testingRoomTheme";
 
 export default function SettingsPage() {
-    const { data: session, status, update } = useSession();
+    const { data: session, status } = useSession();
     const { theme: testingRoomTheme, setTheme: setTestingRoomTheme, hasHydrated: testingRoomThemeHydrated } = useTestingRoomTheme();
 
     const [mounted, setMounted] = useState(false);
-
-    const [name, setName] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
-    const [message, setMessage] = useState("");
 
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -32,10 +28,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         setMounted(true);
-        if (session?.user?.name) {
-            setName(session.user.name);
-        }
-    }, [session]);
+    }, []);
 
     if (status === "loading" || !mounted) {
         return <Loading />;
@@ -50,29 +43,6 @@ export default function SettingsPage() {
             </div>
         );
     }
-
-    const handleUpdateProfile = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSaving(true);
-        setMessage("");
-
-        try {
-            const res = await api.put(API_PATHS.USER_SETTINGS, { name });
-
-            if (res.status === 200) {
-                setMessage("Profile updated successfully!");
-                await update({ name });
-            } else {
-                setMessage(`Error: ${res.data.error || "Failed to update profile"}`);
-            }
-        } catch (err: unknown) {
-            console.error(err);
-            const error = err as { response?: { data?: { error?: string } } };
-            setMessage(`Error: ${error.response?.data?.error || "Network error. Could not update profile."}`);
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -169,29 +139,40 @@ export default function SettingsPage() {
                         Profile Details
                     </div>
 
-                    <form className="p-6 space-y-5" onSubmit={handleUpdateProfile}>
-                        {message && (
-                            <div
-                                className={`p-4 rounded-2xl border-2 border-ink-fg font-medium text-sm flex items-center gap-2 ${message.includes("success")
-                                    ? "bg-primary text-ink-fg"
-                                    : "bg-accent-3 text-white"
-                                     }`}
-                            >
-                                {message.includes("success") && <CheckCircle className="w-5 h-5" />}
-                                {message}
-                            </div>
-                        )}
-
+                    <div className="p-6 space-y-5">
                         <div>
                             <label className="block text-sm font-semibold text-ink-fg mb-1 uppercase tracking-[0.16em]">
-                                Display Name
+                                Name
                             </label>
                             <input
                                 type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="What should we call you?"
-                                className="workbook-input max-w-md"
+                                disabled
+                                value={session.user.name || "Not set"}
+                                className="workbook-input max-w-md cursor-not-allowed bg-paper-bg text-ink-fg/60"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-ink-fg mb-1 uppercase tracking-[0.16em]">
+                                Username
+                            </label>
+                            <input
+                                type="text"
+                                disabled
+                                value={session.user.username || "Not set"}
+                                className="workbook-input max-w-md cursor-not-allowed bg-paper-bg text-ink-fg/60"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-ink-fg mb-1 uppercase tracking-[0.16em]">
+                                Birthdate
+                            </label>
+                            <input
+                                type="text"
+                                disabled
+                                value={formatBirthDate(session.user.birthDate) || "Not set"}
+                                className="workbook-input max-w-md cursor-not-allowed bg-paper-bg text-ink-fg/60"
                             />
                         </div>
 
@@ -206,17 +187,7 @@ export default function SettingsPage() {
                                 className="workbook-input max-w-md cursor-not-allowed bg-paper-bg text-ink-fg/60"
                             />
                         </div>
-
-                        <div className="pt-4 flex justify-start">
-                            <button
-                                type="submit"
-                                disabled={isSaving || name === session.user.name}
-                                className="workbook-button disabled:opacity-60"
-                            >
-                                <Save className="w-4 h-4" /> {isSaving ? "Saving..." : "Save Profile"}
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
 
                 <div className="workbook-panel overflow-hidden">
@@ -319,6 +290,27 @@ export default function SettingsPage() {
             </div>
         </div>
     );
+}
+
+function formatBirthDate(value?: string) {
+    if (!value) {
+        return "";
+    }
+
+    const [yearString, monthString, dayString] = value.split("-");
+    const year = Number(yearString);
+    const month = Number(monthString);
+    const day = Number(dayString);
+
+    if (!year || !month || !day) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+    }).format(new Date(year, month - 1, day));
 }
 
 function ThemeOptionCard({

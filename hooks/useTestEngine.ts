@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
+import { deleteClientCache } from "@/lib/clientCache";
 import type { QuestionExtra } from "@/lib/questionExtra";
 import { normalizeSectionName, VERBAL_SECTION } from "@/lib/sections";
 import { checkIsCorrect } from "@/utils/gradingHelper";
@@ -30,6 +31,21 @@ export const testStages = [
   { section: "Math", module: 1, duration: 35 * 60 },
   { section: "Math", module: 2, duration: 35 * 60 },
 ];
+
+function clearDashboardCaches() {
+  const cacheKeys = [
+    "dashboard:stats",
+    "dashboard:results:30",
+    "dashboard:leaderboard",
+    "dashboard:user-results",
+    "api:dashboard:stats",
+    "api:dashboard:results:30",
+    "api:dashboard:results:all",
+    "api:dashboard:leaderboard",
+  ];
+
+  cacheKeys.forEach((key) => deleteClientCache(key));
+}
 
 export function useTestEngine(testId: string) {
   const router = useRouter();
@@ -196,6 +212,7 @@ export function useTestEngine(testId: string) {
         });
 
         if (res.status === 200 || res.status === 201) {
+          clearDashboardCaches();
           router.push(`/review?testId=${testId}&mode=sectional`);
         }
       } else {
@@ -229,6 +246,7 @@ export function useTestEngine(testId: string) {
         });
 
         if (res.status === 200 || res.status === 201) {
+          clearDashboardCaches();
           router.push(`/review?testId=${testId}&mode=full`);
         }
       }

@@ -269,3 +269,9 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - QR links now target a dedicated entry route at `app/test/[id]/entry/page.tsx` instead of dropping straight into the timed room.
 - The new `/test/[id]/entry` screen supports both full-length and sectional links, shows exam specs before launch, and for sectional links without a module lets the student choose the module from that screen.
 - Shared test-room link construction now lives in `lib/testEntryLinks.ts`; future QR, share-link, or invite work should build on that helper rather than manually assembling `/test/...` URLs in multiple places.
+
+### 2026-04-18 Student Identity Onboarding
+
+- Student accounts now need a one-time welcome setup with an immutable `username` and `birthDate` before entering the main app.
+- Username availability should stay efficient by querying a sparse unique MongoDB index on the normalized lowercase `username` field rather than scanning names or using regex lookups.
+- Settings should show student identity details as locked read-only values, not as editable profile fields.

@@ -3,22 +3,35 @@ import type { VocabBoardState } from "@/lib/vocabBoard";
 
 export interface IUser extends Document {
     name?: string;
+    username?: string;
+    birthDate?: string;
     email: string;
-    password?: string; // Optional if using OAuth
+    password?: string;
     role: "STUDENT" | "PARENT" | "ADMIN";
     childrenIds: mongoose.Types.ObjectId[];
     testsTaken: mongoose.Types.ObjectId[];
     highestScore: number;
     lastTestDate?: Date;
-    wrongQuestions: mongoose.Types.ObjectId[]; // Ref to Result or Question
-    resetPasswordToken?: string; // Store 6-digit reset code
-    resetPasswordExpires?: Date; // Store reset code expiration time
+    wrongQuestions: mongoose.Types.ObjectId[];
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
     vocabBoard?: VocabBoardState;
 }
 
 const UserSchema: Schema<IUser> = new Schema(
     {
         name: { type: String, required: false },
+        username: {
+            type: String,
+            required: false,
+            trim: true,
+            lowercase: true,
+            minlength: 3,
+            maxlength: 20,
+            match: /^[a-z0-9_]+$/,
+            sparse: true,
+        },
+        birthDate: { type: String, required: false },
         email: { type: String, required: true, unique: true },
         password: { type: String, required: false, select: false },
         role: { type: String, enum: ["STUDENT", "PARENT", "ADMIN"], default: "STUDENT" },
@@ -40,6 +53,8 @@ const UserSchema: Schema<IUser> = new Schema(
     },
     { timestamps: true }
 );
+
+UserSchema.index({ username: 1 }, { unique: true, sparse: true });
 
 const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 export default User;

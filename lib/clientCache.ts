@@ -41,3 +41,17 @@ export function setClientCache<T>(key: string, value: T) {
     // Ignore storage write failures and keep the in-memory cache only.
   }
 }
+
+export function deleteClientCache(key: string) {
+  memoryCache.delete(key);
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.removeItem(getStorageKey(key));
+  } catch {
+    // Ignore storage delete failures and continue.
+  }
+}
