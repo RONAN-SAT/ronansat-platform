@@ -182,7 +182,7 @@ To update the shared encrypted development env:
 
 You can distribute the encrypted `.env.development` through git, and distribute the matching `.env.keys` to trusted developers through a separate secure channel.
 
-`bun run db` and `bun run dev` both load `.env.development` plus optional `.env.local` overrides. `bun run db` uses `REMOTE_MONGODB_URI` or the shared `MONGODB_URI` as the fetch source when a first-run bootstrap or `--fetch` is needed, and `bun run dev` points the app itself at `LOCAL_MONGODB_URI`. `bun run build` and `bun run start` load `.env.production` so deployment uses the production environment file rather than the development one.
+`bun run db`, `bun run dev`, `bun run build`, `bun run start`, the production server runtime, and the seed script now all load env through the same shared `dotenvx` decryption flow. Development uses `.env.development` plus optional `.env.local` overrides, while production uses `.env.production`. `bun run db` uses `REMOTE_MONGODB_URI` or the shared `MONGODB_URI` as the fetch source when a first-run bootstrap or `--fetch` is needed, and `bun run dev` points the app itself at `LOCAL_MONGODB_URI`.
 
 Environment variables used by the codebase:
 
@@ -315,7 +315,11 @@ bun run build
 bun run start
 ```
 
-Before deploying, make sure the Vercel project environment has the same required secrets as your app build, especially:
+Before deploying with encrypted env files, set `DOTENV_PRIVATE_KEY_PRODUCTION` in Vercel so the build and the deployed server runtime can decrypt the committed `.env.production` file.
+
+For local development with encrypted files, keep `DOTENV_PRIVATE_KEY_DEVELOPMENT` in your local `.env.keys` file.
+
+If you are not using the encrypted-file workflow, make sure the Vercel project environment has the same required secrets as your app build, especially:
 
 - `MONGODB_URI`
 - `NEXTAUTH_SECRET`
@@ -325,7 +329,6 @@ Before deploying, make sure the Vercel project environment has the same required
 - `EMAIL_PASS`
 - `GEMINI_API_KEY`
 
-For production auth callbacks, set the deployed site URL as `NEXTAUTH_URL` in Vercel too.
 
 ### Lint
 

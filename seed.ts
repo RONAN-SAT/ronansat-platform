@@ -1,16 +1,14 @@
 import mongoose from "mongoose";
-import * as dotenv from "dotenv";
 import Test from "./lib/models/Test";
 import Question from "./lib/models/Question";
-import 'dotenv/config'; // Dòng này sẽ kích hoạt dotenv
+import { loadAppEnv } from "./lib/env/loadAppEnv";
 
-// Load environment variables manually since this is a standalone script
-dotenv.config({ path: ".env.local" });
+loadAppEnv("development");
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-    throw new Error("MONGODB_URI is not defined in .env.local");
+    throw new Error("MONGODB_URI is not defined in the loaded env files.");
 }
 
 const sampleTest = {

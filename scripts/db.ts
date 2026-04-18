@@ -2,6 +2,10 @@ import { spawn } from "node:child_process";
 import process from "node:process";
 import { Collection, Document, MongoClient } from "mongodb";
 
+import { loadAppEnv } from "@/lib/env/loadAppEnv";
+
+loadAppEnv("development");
+
 const DEFAULT_LOCAL_MONGODB_URI = "mongodb://127.0.0.1:27017/ronansat-local";
 const FETCH_FLAG = "--fetch";
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);

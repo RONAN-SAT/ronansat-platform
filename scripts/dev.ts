@@ -3,7 +3,11 @@ import { createRequire } from "node:module";
 import process from "node:process";
 import { MongoClient } from "mongodb";
 
+import { loadAppEnv } from "@/lib/env/loadAppEnv";
+
 const require = createRequire(import.meta.url);
+
+loadAppEnv("development");
 
 const DEFAULT_LOCAL_MONGODB_URI = "mongodb://127.0.0.1:27017/ronansat-local";
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
