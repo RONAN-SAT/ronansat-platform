@@ -88,13 +88,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/full-length/:path*",
-    "/sectional/:path*",
-    "/review/:path*",
-    "/vocab/:path*",
-    "/hall-of-fame/:path*",
-    "/settings/:path*",
-    "/fix/:path*",
     "/parent/:path*",
   ],
 };
