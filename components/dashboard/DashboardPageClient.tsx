@@ -28,12 +28,22 @@ export default function DashboardPageClient() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/auth");
+      return;
+    }
+
     if (status !== "authenticated" || !session?.user?.role) {
       return;
     }
 
     if (session.user.role === "PARENT") {
       router.replace("/parent/dashboard");
+      return;
+    }
+
+    if (!session.user.hasCompletedProfile) {
+      router.replace("/welcome");
       return;
     }
 
@@ -90,13 +100,17 @@ export default function DashboardPageClient() {
     return () => {
       cancelled = true;
     };
-  }, [router, session?.user?.role, status]);
+  }, [router, session?.user?.hasCompletedProfile, session?.user?.role, status]);
 
   if (status === "loading") {
     return <DashboardLoadingState />;
   }
 
   if (status === "unauthenticated") {
+    return null;
+  }
+
+  if (!session?.user?.hasCompletedProfile) {
     return null;
   }
 

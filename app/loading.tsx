@@ -1,5 +1,5 @@
-import Loading from "@/components/Loading";
+import AppMinimalLoading from "@/components/AppMinimalLoading";
 
 export default function AppLoading() {
-  return <Loading showQuote />;
+  return <AppMinimalLoading />;
 }

@@ -10,5 +10,13 @@ export default async function HomePage() {
     redirect("/auth");
   }
 
-  redirect("/auth/redirect");
+  if (session.user.role === "PARENT") {
+    redirect("/parent/dashboard");
+  }
+
+  if (!session.user.hasCompletedProfile) {
+    redirect("/welcome");
+  }
+
+  redirect("/dashboard");
 }
