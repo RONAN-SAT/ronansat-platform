@@ -8,7 +8,6 @@ import InitialTabBootOverlay from "@/components/InitialTabBootOverlay";
 import AppStartupPreloader from "@/components/AppStartupPreloader";
 import AuthProvider from "@/components/AuthProvider";
 import { WorkbookToaster } from "@/components/ui/WorkbookToaster";
-import { VocabBoardProvider } from "@/components/vocab/VocabBoardProvider";
 import { authOptions } from "@/lib/authOptions";
 import { INITIAL_TAB_BOOT_PENDING_KEY, INITIAL_TAB_LOAD_SEEN_KEY } from "@/lib/initialTabLoad";
 import "./globals.css";
@@ -62,12 +61,10 @@ export default async function RootLayout({
 }`}
         </Script>
         <AuthProvider session={session}>
-          <VocabBoardProvider>
-            <AppStartupPreloader />
-            <WorkbookToaster />
-            <AppShell>{children}</AppShell>
-            <InitialTabBootOverlay />
-          </VocabBoardProvider>
+          <AppStartupPreloader />
+          <WorkbookToaster />
+          <AppShell>{children}</AppShell>
+          <InitialTabBootOverlay />
         </AuthProvider>
       </body>
     </html>
