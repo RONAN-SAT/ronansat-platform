@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, Lightbulb, ArrowRight } from "lucide-react";
+import { CheckCircle2, XCircle, Lightbulb } from "lucide-react";
 
 export default function ExplanationSection() {
   return (
@@ -33,7 +33,7 @@ export default function ExplanationSection() {
                 "Detailed breakdown of each problem-solving step",
                 "Common mistake patterns identified and explained",
                 "Related concepts and strategies for similar questions",
-                "AI-powered chatbot for follow-up questions",
+                "Clear written walkthroughs for follow-up review",
               ].map((item, index) => (
                 <motion.li
                   key={index}
@@ -132,10 +132,7 @@ export default function ExplanationSection() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2 text-blue-600 font-medium cursor-pointer hover:text-blue-700 transition-colors">
-                        <span>Ask AI for more help</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
+                      <div className="text-sm font-medium text-blue-600">Review the worked solution and retry similar questions.</div>
                     </div>
                   </div>
                 </div>

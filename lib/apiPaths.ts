@@ -4,7 +4,6 @@ export const API_PATHS = {
     // Static routes
     QUESTIONS: "/api/questions",
     RESULTS: "/api/results",
-    CHAT: "/api/chat",
     USER_SETTINGS: "/api/user/settings",
     USER_PASSWORD: "/api/user/password",
     USER_ONBOARDING: "/api/user/onboarding",
@@ -23,5 +22,4 @@ export const API_PATHS = {
 
     getQuestionsByTestId: (testId: string) => `/api/questions?testId=${testId}`,
     getQuestionExplanation: (questionId: string) => `/api/questions/${questionId}/explanation`,
-    getChatByQuestionId: (questionId: string) => `/api/chat?questionId=${questionId}`,
 };

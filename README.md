@@ -1,6 +1,6 @@
 # Bluebook Main
 
-SAT/Bluebook practice platform built with `Next.js 16`, `React 19`, `MongoDB`, `NextAuth`, `Gemini`, and supporting services such as Gmail SMTP and Google OAuth.
+SAT/Bluebook practice platform built with `Next.js 16`, `React 19`, `MongoDB`, `NextAuth`, and supporting services such as Gmail SMTP and Google OAuth.
 
 This README is intended to help a new contributor:
 
@@ -19,7 +19,6 @@ Main features currently present in the repo:
 - forgot-password flow via email
 - `STUDENT` and `ADMIN` roles
 - SAT test taking, results, and dashboard flows
-- AI chat for question explanations through Gemini
 - leaderboard / hall of fame
 
 Default entry flow:
@@ -34,7 +33,6 @@ Default entry flow:
 - `TypeScript`
 - `MongoDB + Mongoose`
 - `NextAuth`
-- `Google Gemini API`
 - `Nodemailer (Gmail SMTP)`
 - `Ant Design`
 
@@ -64,7 +62,6 @@ Optional services for full functionality:
 
 - a Gmail account with an App Password for email sending
 - a Google OAuth app
-- a Gemini API key
 
 This repo is now set up around `bun`:
 
@@ -194,7 +191,6 @@ Environment variables used by the codebase:
 | `LOCAL_MONGODB_URI` | For local dev | Local MongoDB target used by `bun run dev` |
 | `REMOTE_MONGODB_URI` | Optional | Explicit remote MongoDB source for `bun run db -- --fetch` |
 | `NEXTAUTH_SECRET` | Yes | NextAuth session/token secret |
-| `GEMINI_API_KEY` | For AI chat | `/api/chat` |
 | `EMAIL_USER` | For email features | Forgot password |
 | `EMAIL_PASS` | For email features | Gmail App Password for SMTP |
 | `EMAIL_FROM_NAME` | Optional | Sender name for emails |
@@ -210,7 +206,6 @@ Example `.env.local`:
 LOCAL_MONGODB_URI=mongodb://127.0.0.1:27017/ronansat-local
 REMOTE_MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db-name>?retryWrites=true&w=majority
 NEXTAUTH_SECRET=replace-with-a-long-random-secret
-GEMINI_API_KEY=
 
 EMAIL_USER=
 EMAIL_PASS=
@@ -295,11 +290,7 @@ Typical local callback URL for NextAuth:
 http://localhost:3000/api/auth/callback/google
 ```
 
-### 7.6 Gemini API
-
-Used for the question explanation chat feature.
-
-### 7.7 PostHog
+### 7.6 PostHog
 
 Used for client-side product analytics and pageview logging.
 
@@ -314,12 +305,6 @@ Notes:
 
 - Leave `NEXT_PUBLIC_POSTHOG_HOST` as `https://us.i.posthog.com` unless your PostHog project uses a different region or a self-hosted instance.
 - Authenticated users are identified from the existing NextAuth session using their Ronan SAT user id, email, role, and profile metadata.
-
-```env
-GEMINI_API_KEY=
-```
-
-If this variable is empty, the chat route will return `Gemini API key not configured`.
 
 ## 9. Running the project
 
@@ -348,7 +333,6 @@ If you are not using the encrypted-file workflow, make sure the Vercel project e
 - `GOOGLE_CLIENT_SECRET`
 - `EMAIL_USER`
 - `EMAIL_PASS`
-- `GEMINI_API_KEY`
 
 
 ### Lint
@@ -398,8 +382,7 @@ After configuring the environment and running `bun run dev`, verify in this orde
 4. Log back in with that account.
 5. If you seeded data, verify test/question flows.
 6. If email is configured, test forgot password.
-7. If Gemini is configured, test the AI chat in review flow.
-8. If Google OAuth is configured, test Google login.
+7. If Google OAuth is configured, test Google login.
 
 ## 12. Available scripts
 
@@ -465,12 +448,6 @@ Check:
 - Gmail App Password setup
 - whether the Gmail account has passed Google security verification
 
-### AI chat reports configuration errors
-
-Check:
-
-- `GEMINI_API_KEY`
-
 ## 15. Recommended onboarding order
 
 If you want the fastest path to a working local environment:
@@ -481,7 +458,7 @@ If you want the fastest path to a working local environment:
 4. Run `bun run dev`.
 5. Run `bun run seed`.
 6. Confirm sign-up and login work.
-7. Enable email, Google login, and Gemini only when needed.
+7. Enable email and Google login only when needed.
 
 ## 16. Additional notes
 

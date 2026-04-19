@@ -314,3 +314,9 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - Parent auth, parent dashboard, verification-code routes, and the related parent-only data model fields were removed from the product.
 - Shared auth, session, and profile-gate code now normalize any legacy non-admin account into the student flow so old parent records no longer surface a separate product path.
 - Contributor-facing docs now describe the current two-role system: `STUDENT` and `ADMIN`.
+
+### 2026-04-19 AI Feature Removal
+
+- The Gemini-backed question assistant was removed end-to-end, including `/api/chat`, the chat controller/service/model stack, the review chatbot component/hook, and the markdown renderer that existed only for AI responses.
+- Review still keeps normal stored question explanations through the existing explanation fields and routes; only the interactive AI follow-up layer was removed.
+- Contributor docs and dependency metadata now no longer advertise `GEMINI_API_KEY` or Gemini as part of the required app setup.

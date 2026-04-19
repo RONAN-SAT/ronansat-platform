@@ -12,7 +12,7 @@
     export const questionController = {
         async getQuestions(req: Request) {  
             try {
-                const { searchParams } = new URL(req.url);       // Tương tự chatController, nó lấy testId=123 trong url
+                const { searchParams } = new URL(req.url);       // Parse query params such as testId=123 from the URL
                 const testId = searchParams.get("testId");       // testId = 123 lấy từ searchParams
 
                 const questions = await questionService.getQuestions(testId);   // Gọi service lấy mảng câu hỏi và gán vào questions

@@ -17,7 +17,6 @@ export const ROLE_PERMISSIONS = {
     "result.readOwn",
     "progress.readOwn",
     "review.readOwn",
-    "review.chatOwn",
     "pdf.exportOwn",
   ],
   ADMIN: ["*"],
