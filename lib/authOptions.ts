@@ -9,7 +9,7 @@ import User from "@/lib/models/User";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { isValidEmail, normalizeEmail } from "@/lib/security";
 import { hasCompletedProfile } from "@/lib/userProfile";
-import type { Role } from "@/lib/permissions";
+import { normalizeRole, type Role } from "@/lib/permissions";
 
 loadAppEnv();
 
@@ -58,6 +58,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
+        if (user.role !== "ADMIN" && user.role !== "STUDENT") {
+          user.role = "STUDENT";
+          await user.save();
+        }
+
         const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
         if (!isPasswordCorrect) {
           throw new Error("Invalid credentials");
@@ -67,7 +72,7 @@ export const authOptions: NextAuthOptions = {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
-          role: user.role as Role,
+          role: normalizeRole(user.role),
           username: user.username,
           birthDate: user.birthDate,
           hasCompletedProfile: hasCompletedProfile(user),
@@ -94,9 +99,22 @@ export const authOptions: NextAuthOptions = {
               name: user.name || "Google User",
               role: "STUDENT",
             });
-          } else if (user.name && existingUser.name !== user.name) {
-            existingUser.name = user.name;
-            await existingUser.save();
+          } else {
+            let shouldSave = false;
+
+            if (existingUser.role !== "ADMIN" && existingUser.role !== "STUDENT") {
+              existingUser.role = "STUDENT";
+              shouldSave = true;
+            }
+
+            if (user.name && existingUser.name !== user.name) {
+              existingUser.name = user.name;
+              shouldSave = true;
+            }
+
+            if (shouldSave) {
+              await existingUser.save();
+            }
           }
           return true;
         } catch (error) {
@@ -118,7 +136,7 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await User.findOne({ email: token.email });
         if (dbUser) {
           token.id = dbUser._id.toString();
-          token.role = dbUser.role;
+          token.role = normalizeRole(dbUser.role);
           token.name = dbUser.name;
           token.username = dbUser.username;
           token.birthDate = dbUser.birthDate;
@@ -126,7 +144,7 @@ export const authOptions: NextAuthOptions = {
         }
       } else if (user) {
         token.id = user.id;
-        token.role = user.role;
+          token.role = normalizeRole(user.role);
         token.name = user.name;
         token.username = user.username;
         token.birthDate = user.birthDate;
@@ -137,7 +155,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as Role;
+        session.user.role = normalizeRole(typeof token.role === "string" ? token.role : undefined);
         session.user.name = token.name;
         session.user.username = typeof token.username === "string" ? token.username : undefined;
         session.user.birthDate = typeof token.birthDate === "string" ? token.birthDate : undefined;

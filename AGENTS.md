@@ -51,7 +51,7 @@ This file is the canonical agent-facing instruction document for repository-wide
 - Keep database access and persistence logic in `lib/models/`, `lib/schema/`, `lib/mongodb.ts`, and `lib/services/` rather than embedding it directly in route handlers or components.
 - API routes under `app/api/` should stay thin and call shared service or controller code when possible.
 - For local development workflows, prefer a local MongoDB target by default and require an explicit opt-in sync step when pulling fresh data from a remote MongoDB source.
-- Preserve role-aware behavior for `STUDENT`, `PARENT`, and `ADMIN` flows. Do not collapse role distinctions accidentally when editing auth, dashboard, or parent features.
+- Preserve role-aware behavior for `STUDENT` and `ADMIN` flows. Do not collapse role distinctions accidentally when editing auth, dashboard, or admin features.
 - Treat environment-backed integrations such as MongoDB, NextAuth, Gemini, SMTP, and other external providers as configuration boundaries. Do not hardcode secrets, credentials, or provider-specific fallback values.
 
 ## Documentation rules

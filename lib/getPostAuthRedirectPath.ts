@@ -11,9 +11,5 @@ export function getPostAuthRedirectPath(user: RedirectUser) {
     return "/welcome";
   }
 
-  if (user.role === "PARENT") {
-    return "/parent/dashboard";
-  }
-
   return "/dashboard";
 }

@@ -12,7 +12,6 @@ export const API_PATHS = {
     DEV_ONBOARDING_RESET: "/api/dev/onboarding",
     USER_VOCAB_BOARD: "/api/user/vocab-board",
     USER_REVIEW_REASONS: "/api/user/review-reasons",
-    PARENT_DASHBOARD: "/api/parent/dashboard",
     VOCAB_DICTIONARY: "/api/vocab/dictionary",
     FIX_BOARD: "/api/fix-board",
     FIX_REPORTS: "/api/fix-reports",

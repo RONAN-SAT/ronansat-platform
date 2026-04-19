@@ -21,10 +21,6 @@ export default async function AdminDashboardPage() {
     redirect("/auth");
   }
 
-  if (user.role === "PARENT") {
-    redirect("/parent/dashboard");
-  }
-
   if (!hasCompletedProfile(user)) {
     redirect("/welcome");
   }

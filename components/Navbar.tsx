@@ -40,7 +40,7 @@ const STUDENT_ITEMS: NavItemConfig[] = [
     mobileLabel: "Home",
     icon: LayoutDashboard,
     tone: "primary",
-    matches: ["/dashboard", "/parent/dashboard"],
+    matches: ["/dashboard"],
   },
   {
     href: "/full-length",
@@ -102,33 +102,6 @@ const STUDENT_ITEMS: NavItemConfig[] = [
   },
 ];
 
-const PARENT_ITEMS: NavItemConfig[] = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    mobileLabel: "Home",
-    icon: LayoutDashboard,
-    tone: "primary",
-    matches: ["/dashboard", "/parent/dashboard"],
-  },
-  {
-    href: "/hall-of-fame",
-    label: "Hall of Fame",
-    mobileLabel: "Hall",
-    icon: Trophy,
-    tone: "primary",
-    matches: ["/hall-of-fame"],
-  },
-  {
-    href: "/settings",
-    label: "Settings",
-    mobileLabel: "Settings",
-    icon: Settings,
-    tone: "surface",
-    matches: ["/settings"],
-  },
-];
-
 const ADMIN_ITEMS: NavItemConfig[] = [
   {
     href: "/dashboard",
@@ -136,7 +109,7 @@ const ADMIN_ITEMS: NavItemConfig[] = [
     mobileLabel: "Home",
     icon: LayoutDashboard,
     tone: "primary",
-    matches: ["/dashboard", "/parent/dashboard"],
+    matches: ["/dashboard"],
   },
   {
     href: "/full-length",
@@ -221,10 +194,9 @@ export default function Navbar() {
   const searchParams = useSearchParams();
   const isReady = status !== "loading" && status !== "unauthenticated" && !!session;
   const isHiddenRoute = pathname.startsWith("/test/") || pathname.startsWith("/auth");
-  const isParent = session?.user.role === "PARENT";
   const isAdmin = session?.user.role === "ADMIN";
-  const homeHref = isParent ? "/parent/dashboard" : "/dashboard";
-  const navItems = isAdmin ? ADMIN_ITEMS : isParent ? PARENT_ITEMS : STUDENT_ITEMS;
+  const homeHref = "/dashboard";
+  const navItems = isAdmin ? ADMIN_ITEMS : STUDENT_ITEMS;
   const displayName = session?.user.name || session?.user.email?.split("@")[0] || "Scholar";
 
   useEffect(() => {

@@ -2,7 +2,7 @@ import { withAuth } from "next-auth/middleware";
 import type { NextAuthMiddlewareOptions } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-import type { Role } from "@/lib/permissions";
+import { normalizeRole, type Role } from "@/lib/permissions";
 
 const PROFILE_GATE_API_PATH = "/api/user/profile-gate";
 
@@ -11,11 +11,7 @@ type ProfileGatePayload = {
   role?: Role;
 };
 
-function getHomePath(role?: string) {
-  if (role === "PARENT") {
-    return "/parent/dashboard";
-  }
-
+function getHomePath() {
   return "/dashboard";
 }
 
@@ -34,7 +30,7 @@ export default withAuth(
   async function proxy(req) {
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
-    let resolvedRole: Role | undefined = token?.role;
+    let resolvedRole = normalizeRole(typeof token?.role === "string" ? token.role : undefined);
     let hasCompletedProfile = Boolean(token?.hasCompletedProfile);
 
     if (token) {
@@ -48,7 +44,7 @@ export default withAuth(
 
         if (response.ok) {
           const payload = (await response.json()) as ProfileGatePayload;
-          resolvedRole = payload.role ?? resolvedRole;
+          resolvedRole = normalizeRole(payload.role ?? resolvedRole);
           hasCompletedProfile = Boolean(payload.hasCompletedProfile);
 
           if (!hasCompletedProfile && pathname !== "/welcome") {
@@ -56,7 +52,7 @@ export default withAuth(
           }
 
           if (hasCompletedProfile && pathname === "/welcome") {
-            return NextResponse.redirect(new URL(getHomePath(resolvedRole), req.url));
+            return NextResponse.redirect(new URL(getHomePath(), req.url));
           }
         }
       } catch (error) {
@@ -65,15 +61,11 @@ export default withAuth(
     }
 
     if (pathname.startsWith("/admin") && resolvedRole !== "ADMIN") {
-      return NextResponse.redirect(new URL(getHomePath(resolvedRole), req.url));
-    }
-
-    if (pathname.startsWith("/parent") && resolvedRole !== "PARENT" && resolvedRole !== "ADMIN") {
-      return NextResponse.redirect(new URL(getHomePath(resolvedRole), req.url));
+      return NextResponse.redirect(new URL(getHomePath(), req.url));
     }
 
     if (pathname === "/welcome" && hasCompletedProfile) {
-      return NextResponse.redirect(new URL(getHomePath(resolvedRole), req.url));
+      return NextResponse.redirect(new URL(getHomePath(), req.url));
     }
 
     return NextResponse.next();
@@ -83,6 +75,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/parent/:path*",
+    "/admin/:path*",
+    "/welcome",
   ],
 };

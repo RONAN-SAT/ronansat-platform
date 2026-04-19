@@ -6,7 +6,7 @@ export const UserValidationSchema = z.object({
     birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     email: z.string().email("Invalid email address"),
     password: z.string().min(6, "Password must be at least 6 characters").optional(),
-    role: z.enum(["STUDENT", "PARENT", "ADMIN"]).default("STUDENT"),
+    role: z.enum(["STUDENT", "ADMIN"]).default("STUDENT"),
     testsTaken: z.array(z.string()).optional(),
     highestScore: z.number().min(0).default(0),
     lastTestDate: z.date().optional(),

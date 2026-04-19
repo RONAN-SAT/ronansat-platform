@@ -1,8 +1,5 @@
 import crypto from "crypto";
 
-import dbConnect from "@/lib/mongodb";
-import User from "@/lib/models/User";
-
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function normalizeEmail(email: string): string {
@@ -38,20 +35,4 @@ export function generateNumericCode(length = 6): string {
   const min = 10 ** (length - 1);
   const value = crypto.randomInt(min, max);
   return String(value);
-}
-
-export async function verifyParentChildOwnership(parentId: string, studentId: string): Promise<boolean> {
-  try {
-    await dbConnect();
-
-    const parent = await User.exists({
-      _id: parentId,
-      childrenIds: studentId,
-    });
-
-    return Boolean(parent);
-  } catch (error) {
-    console.error("verifyParentChildOwnership error:", error);
-    return false;
-  }
 }

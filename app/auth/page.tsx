@@ -194,10 +194,6 @@ export default function AuthPage() {
       </form>
 
       <div className="mt-4 grid gap-3">
-        <Link href="/auth/parent" className="workbook-button workbook-button-secondary w-full justify-center">
-          Open Parent Access
-        </Link>
-
         <button
           onClick={() => signIn("google", { callbackUrl: "/auth/redirect" })}
           disabled={loading}

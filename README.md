@@ -17,10 +17,9 @@ Main features currently present in the repo:
 - email/password registration and login
 - Google login
 - forgot-password flow via email
-- `STUDENT`, `PARENT`, and `ADMIN` roles
+- `STUDENT` and `ADMIN` roles
 - SAT test taking, results, and dashboard flows
 - AI chat for question explanations through Gemini
-- parent verification via email
 - leaderboard / hall of fame
 
 Default entry flow:
@@ -196,7 +195,7 @@ Environment variables used by the codebase:
 | `REMOTE_MONGODB_URI` | Optional | Explicit remote MongoDB source for `bun run db -- --fetch` |
 | `NEXTAUTH_SECRET` | Yes | NextAuth session/token secret |
 | `GEMINI_API_KEY` | For AI chat | `/api/chat` |
-| `EMAIL_USER` | For email features | Forgot password, parent verification |
+| `EMAIL_USER` | For email features | Forgot password |
 | `EMAIL_PASS` | For email features | Gmail App Password for SMTP |
 | `EMAIL_FROM_NAME` | Optional | Sender name for emails |
 | `GOOGLE_CLIENT_ID` | For Google login | NextAuth Google provider |
@@ -261,7 +260,6 @@ NEXTAUTH_SECRET=this-should-be-a-long-random-secret-value
 Used for:
 
 - forgot-password emails
-- parent verification emails
 
 Setup steps:
 
@@ -489,4 +487,4 @@ If you want the fastest path to a working local environment:
 
 - The local workspace may already contain `node_modules/`, but after a fresh clone you should still run `bun install`.
 - `/api/export-pdf` currently returns `410` and points users toward a client-side print flow instead of server-side PDF export.
-- The current application roles are `STUDENT`, `PARENT`, and `ADMIN`.
+- The current application roles are `STUDENT` and `ADMIN`.

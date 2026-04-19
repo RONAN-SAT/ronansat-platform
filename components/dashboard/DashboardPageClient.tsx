@@ -64,11 +64,6 @@ export default function DashboardPageClient() {
       return;
     }
 
-    if (session.user.role === "PARENT") {
-      router.replace("/parent/dashboard");
-      return;
-    }
-
     if (!session.user.hasCompletedProfile) {
       router.replace("/welcome");
       return;
@@ -167,10 +162,6 @@ export default function DashboardPageClient() {
   }
 
   if (!session?.user?.hasCompletedProfile) {
-    return null;
-  }
-
-  if (session?.user.role === "PARENT") {
     return null;
   }
 

@@ -21,8 +21,7 @@ export interface IUser extends Document {
     birthDate?: string;
     email: string;
     password?: string;
-    role: "STUDENT" | "PARENT" | "ADMIN";
-    childrenIds: mongoose.Types.ObjectId[];
+    role: "STUDENT" | "ADMIN";
     testsTaken: mongoose.Types.ObjectId[];
     highestScore: number;
     lastTestDate?: Date;
@@ -47,8 +46,7 @@ const UserSchema: Schema<IUser> = new Schema(
         birthDate: { type: String, required: false },
         email: { type: String, required: true, unique: true, trim: true, lowercase: true, set: normalizeRequiredEmail },
         password: { type: String, required: false, select: false },
-        role: { type: String, enum: ["STUDENT", "PARENT", "ADMIN"], default: "STUDENT" },
-        childrenIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+        role: { type: String, enum: ["STUDENT", "ADMIN"], default: "STUDENT" },
         testsTaken: [{ type: Schema.Types.ObjectId, ref: "Test" }],
         highestScore: { type: Number, default: 0 },
         lastTestDate: { type: Date },

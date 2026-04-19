@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import dbConnect from "@/lib/mongodb";
 import User from "@/lib/models/User";
+import { normalizeRole } from "@/lib/permissions";
 import { hasCompletedProfile } from "@/lib/userProfile";
 
 export async function GET() {
@@ -31,7 +32,7 @@ export async function GET() {
                     username: user.username,
                     birthDate: user.birthDate,
                     email: user.email,
-                    role: user.role,
+                    role: normalizeRole(user.role),
                     hasCompletedProfile: hasCompletedProfile(user),
                 },
             },
