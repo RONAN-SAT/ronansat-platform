@@ -1,0 +1,125 @@
+name: Database CI
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/seed.sql"
+      - "supabase/config.toml"
+      - ".github/workflows/db-ci.yml"
+      - ".github/workflows/db-production.yml"
+      - "scripts/supabase/**"
+      - "package.json"
+      - "bun.lock"
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/seed.sql"
+      - "supabase/config.toml"
+      - ".github/workflows/db-ci.yml"
+      - ".github/workflows/db-production.yml"
+      - "scripts/supabase/**"
+      - "package.json"
+      - "bun.lock"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: test-openai-key
+      SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN: test-twilio-token
+      GOOGLE_CLIENT_ID: test-google-client-id
+      GOOGLE_CLIENT_SECRET: test-google-client-secret
+      SUPABASE_AUTH_EXTERNAL_APPLE_SECRET: test-apple-secret
+      S3_HOST: test-s3-host
+      S3_REGION: test-s3-region
+      S3_ACCESS_KEY: test-s3-access-key
+      S3_SECRET_KEY: test-s3-secret-key
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.92.1
+
+      - run: supabase start
+      - run: supabase db lint
+      - run: supabase db reset
+
+  dryrun:
+    runs-on: ubuntu-latest
+    environment: Action Production
+    env:
+      OPENAI_API_KEY: test-openai-key
+      SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN: test-twilio-token
+      GOOGLE_CLIENT_ID: test-google-client-id
+      GOOGLE_CLIENT_SECRET: test-google-client-secret
+      SUPABASE_AUTH_EXTERNAL_APPLE_SECRET: test-apple-secret
+      S3_HOST: test-s3-host
+      S3_REGION: test-s3-region
+      S3_ACCESS_KEY: test-s3-access-key
+      S3_SECRET_KEY: test-s3-secret-key
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.92.1
+
+      - name: Resolve linked project ref
+        run: echo "SUPABASE_PROJECT_REF=$(node -p \"require('./supabase/.temp/linked-project.json').ref\")" >> "$GITHUB_ENV"
+
+      - run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Run database migration dry-run
+        id: db-migration-dryrun
+        run: |
+          set +e
+          supabase db push --dry-run -p "$SUPABASE_DB_PASSWORD" --include-all > dryrun_output.txt 2>&1
+          exit_code=$?
+          if [ $exit_code -eq 0 ]; then
+            echo "dryrun_success=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dryrun_success=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo 'DRYRUN_OUTPUT<<EOF' >> "$GITHUB_ENV"
+          cat dryrun_output.txt >> "$GITHUB_ENV"
+          echo 'EOF' >> "$GITHUB_ENV"
+
+      - name: Comment PR with results
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const dryrunSuccess = '${{ steps.db-migration-dryrun.outputs.dryrun_success }}' === 'true';
+
+            let body = '## Database Migration Check Results\n\n';
+            body += '### Dry Run Results\n```\n' + process.env.DRYRUN_OUTPUT + '\n```\n\n';
+
+            if (dryrunSuccess) {
+              body += '✅ Database will be migrated automatically when this PR is merged to `main`.';
+            } else {
+              body += '⚠️ Manual review required. Please check the dry run results above.';
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+      - name: Check final status
+        if: always()
+        run: |
+          if [[ "${{ steps.db-migration-dryrun.outputs.dryrun_success }}" == "false" ]]; then
+            echo "Dry-run failed. Manual review required."
+            exit 1
+          fi

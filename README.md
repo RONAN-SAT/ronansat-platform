@@ -219,12 +219,14 @@ You can distribute the encrypted `.env.development` through git, and distribute 
 
 `bun run db`, `bun stop db`, `bun run dev`, `bun run build`, and `bun run start` all load env through `dotenvx`. Development commands use `.env.development` plus optional `.env.local` overrides, while production build and start use `.env.production`. The deployed production server runtime decrypts `.env.production` on startup with `DOTENV_PRIVATE_KEY_PRODUCTION`. `bun run db` uses `REMOTE_MONGODB_URI` or the shared `MONGODB_URI` as the fetch source when a first-run bootstrap or `--fetch` is needed, and `bun run dev` points the app itself at `LOCAL_MONGODB_URI`.
 
-The repo also includes a GitHub Actions pipeline for Supabase schema sync:
+The repo also includes a two-step GitHub Actions pipeline for Supabase schema sync:
 
-- every pull request runs `supabase db reset` to prove the committed migration set still applies cleanly from scratch
-- every push to `main` automatically runs `bun run supabase:db:push:production`
-- configure the GitHub `Action Production` environment with `DOTENV_PRIVATE_KEY_PRODUCTION`, `SUPABASE_ACCESS_TOKEN`, and `SUPABASE_DB_PASSWORD`
-- the production push uses the repo's linked Supabase project and `--include-all` so the remote schema stays aligned with the committed migration history
+- `Database CI` runs only when Supabase migration-related files change
+- that CI workflow starts a local Supabase stack, runs `supabase db lint`, runs `supabase db reset`, and performs a remote `supabase db push --dry-run`
+- on pull requests, the CI workflow comments with the dry-run result so you can see whether the merged migration is expected to apply cleanly
+- `Database Production` runs only after `Database CI` succeeds on `main`
+- the production workflow uses the GitHub `Action Production` environment with `DOTENV_PRIVATE_KEY_PRODUCTION`, `SUPABASE_ACCESS_TOKEN`, and `SUPABASE_DB_PASSWORD`
+- the production push explicitly links to the repo's committed Supabase project ref and runs `bun run supabase:db:push:production`, which applies `--include-all` so the remote schema stays aligned with the committed migration history
 
 Environment variables used by the codebase:
 
