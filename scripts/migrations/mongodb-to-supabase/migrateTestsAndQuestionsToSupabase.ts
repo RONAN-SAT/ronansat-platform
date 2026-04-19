@@ -42,9 +42,9 @@ type MigratedSection = {
 };
 
 type ExistingQuestionRow = {
-  test_sections: {
+  test_sections: Array<{
     test_id: string;
-  } | null;
+  }> | null;
 };
 
 type MigrationFailure = {
@@ -352,7 +352,7 @@ async function main() {
     const importedQuestionCountsByTestId = new Map<string, number>();
 
     for (const question of existingQuestions as ExistingQuestionRow[]) {
-      const testId = question.test_sections?.test_id;
+      const testId = question.test_sections?.[0]?.test_id;
       if (!testId) {
         continue;
       }
