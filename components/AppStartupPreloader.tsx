@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 
+import { markInitialTabPreloadReady } from "@/lib/initialTabLoad";
 import { preloadInitialAppData } from "@/lib/startupPreload";
 
 const BLOCKED_PRELOAD_PREFIXES = ["/auth", "/test/"];
@@ -27,16 +28,20 @@ export default function AppStartupPreloader() {
     }
 
     if (status !== "authenticated" || !session?.user?.id || !session.user.hasCompletedProfile) {
+      markInitialTabPreloadReady();
       return;
     }
 
     if (!canPreloadForPath(pathname)) {
+      markInitialTabPreloadReady();
       return;
     }
 
     void preloadInitialAppData({
       role: session.user.role,
       userId: session.user.id,
+    }).finally(() => {
+      markInitialTabPreloadReady();
     });
   }, [pathname, session?.user?.hasCompletedProfile, session?.user?.id, session?.user?.role, status]);
 

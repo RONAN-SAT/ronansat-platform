@@ -1,10 +1,11 @@
 import { clearClientCache } from "@/lib/clientCache";
-import { INITIAL_TAB_BOOT_PENDING_KEY, INITIAL_TAB_LOAD_SEEN_KEY } from "@/lib/initialTabLoad";
+import { INITIAL_TAB_BOOT_PENDING_KEY, INITIAL_TAB_LOAD_SEEN_KEY, INITIAL_TAB_PRELOAD_READY_KEY } from "@/lib/initialTabLoad";
 import { TESTING_ROOM_THEME_STORAGE_KEY } from "@/lib/testingRoomTheme";
 
 const SESSION_STORAGE_KEYS = [
   INITIAL_TAB_LOAD_SEEN_KEY,
   INITIAL_TAB_BOOT_PENDING_KEY,
+  INITIAL_TAB_PRELOAD_READY_KEY,
   "testName",
 ];
 

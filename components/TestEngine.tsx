@@ -54,6 +54,7 @@ export default function TestEngine({ testId }: { testId: string }) {
   if (questions.length === 0) {
     return (
       <div className="bg-dot-pattern flex min-h-screen items-center justify-center bg-paper-bg p-6">
+        <InitialTabBootReady />
         <div className="workbook-panel max-w-lg px-8 py-10 text-center">
           <div className="workbook-sticker bg-accent-3 text-white">Test Unavailable</div>
           <h1 className="mt-5 font-display text-4xl font-black uppercase tracking-tight text-ink-fg">No questions found</h1>

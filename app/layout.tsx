@@ -12,7 +12,7 @@ import PostHogProvider from "@/components/PostHogProvider";
 import { WorkbookToaster } from "@/components/ui/WorkbookToaster";
 import { VocabBoardProvider } from "@/components/vocab/VocabBoardProvider";
 import { authOptions } from "@/lib/authOptions";
-import { INITIAL_TAB_BOOT_PENDING_KEY, INITIAL_TAB_LOAD_SEEN_KEY } from "@/lib/initialTabLoad";
+import { INITIAL_TAB_BOOT_PENDING_KEY, INITIAL_TAB_LOAD_SEEN_KEY, INITIAL_TAB_PRELOAD_READY_KEY } from "@/lib/initialTabLoad";
 import "./globals.css";
 
 const displayFont = Bricolage_Grotesque({
@@ -58,6 +58,7 @@ export default async function RootLayout({
   if (storage.getItem(${JSON.stringify(INITIAL_TAB_LOAD_SEEN_KEY)}) !== "1") {
     storage.setItem(${JSON.stringify(INITIAL_TAB_LOAD_SEEN_KEY)}, "1");
     storage.setItem(${JSON.stringify(INITIAL_TAB_BOOT_PENDING_KEY)}, "1");
+    storage.setItem(${JSON.stringify(INITIAL_TAB_PRELOAD_READY_KEY)}, "0");
   }
 } catch (error) {
   // Ignore storage initialization failures.

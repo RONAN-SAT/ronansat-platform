@@ -667,6 +667,7 @@ export default function ParentDashboardPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-paper-bg px-6 py-10">
+        <InitialTabBootReady />
         <div className="workbook-panel mx-auto max-w-3xl bg-surface-white p-10 text-center">
           <h1 className="font-display text-3xl font-black uppercase tracking-tight text-ink-fg">Unable to load the dashboard</h1>
           <p className="mt-3 text-ink-fg/70">{error}</p>
@@ -685,6 +686,7 @@ export default function ParentDashboardPage() {
   if (!data?.hasChildren) {
     return (
       <div className="min-h-screen bg-paper-bg px-6 py-10">
+        <InitialTabBootReady />
         <div className="workbook-panel mx-auto max-w-4xl p-10">
           <div className="mx-auto max-w-2xl text-center">
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-ink-fg bg-primary text-ink-fg brutal-shadow-sm">

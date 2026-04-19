@@ -37,6 +37,7 @@ export default function SettingsPage() {
     if (status === "unauthenticated" || !session) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-paper-bg border-t-4 border-ink-fg">
+                <InitialTabBootReady />
                 <div className="workbook-panel p-8 text-ink-fg font-bold bg-surface-white">
                     Please log in to view settings.
                 </div>

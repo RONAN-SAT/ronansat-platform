@@ -77,7 +77,7 @@ export default function VocabPage() {
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-paper-bg bg-dot-pattern px-4 py-4 sm:px-5 lg:h-screen lg:overflow-hidden lg:px-6">
-      <InitialTabBootReady />
+      <InitialTabBootReady when={hydrated} />
       <div className="mx-auto max-w-[1640px] lg:flex lg:h-full lg:flex-col">
         <VocabPageHeader />
 

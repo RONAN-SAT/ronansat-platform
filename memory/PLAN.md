@@ -225,6 +225,12 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - The main navbar destinations now keep their page frame visible while loading: `dashboard`, `full-length`, `sectional`, `review`, `admin`, and `settings` render in-layout skeleton states rather than replacing the whole screen with the generic `Loading` overlay.
 - Repository verification is still partially blocked by pre-existing tooling issues: eslint currently crashes inside `eslint-plugin-react` (`react/display-name`), and `tsc --noEmit` currently reports stale `.next` validator references to missing route layout files.
 
+### 2026-04-19 Initial Boot Loader Consistency Pass
+
+- `components/InitialTabBootReady.tsx` now supports a `when` gate and clears the initial-tab boot flag only after two animation frames, so the pretty loader drops only after the ready screen has actually painted.
+- Hydration-sensitive routes now gate boot completion correctly: `app/vocab/page.tsx` waits for board hydration, and `app/fix/page.tsx` waits for fix-board hydration instead of clearing boot as soon as the shell mounts.
+- Non-happy-path settled states now also clear boot so the app does not get stuck on the pretty loader when a page resolves into an empty or unauthorized screen: `app/settings/page.tsx`, `app/parent/dashboard/page.tsx`, and `components/TestEngine.tsx` now mark boot ready in those resolved fallback states too.
+
 ### 2026-04-17 Vocab Revision Upgrade Start
 
 - The SAT vocab board is being extended from plain text cards into revision cards with a dedicated term plus editable definition.

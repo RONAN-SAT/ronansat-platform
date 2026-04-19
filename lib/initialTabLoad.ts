@@ -1,5 +1,6 @@
 export const INITIAL_TAB_LOAD_SEEN_KEY = "ronan_app_initial_tab_load_seen";
 export const INITIAL_TAB_BOOT_PENDING_KEY = "ronan_app_initial_tab_boot_pending";
+export const INITIAL_TAB_PRELOAD_READY_KEY = "ronan_app_initial_tab_preload_ready";
 export const INITIAL_TAB_BOOT_CHANGE_EVENT = "ronan:initial-tab-boot-change";
 
 function getSessionStorage() {
@@ -30,7 +31,16 @@ export function isInitialTabBootPending() {
   return getSessionStorage()?.getItem(INITIAL_TAB_BOOT_PENDING_KEY) === "1";
 }
 
+export function isInitialTabPreloadReady() {
+  return getSessionStorage()?.getItem(INITIAL_TAB_PRELOAD_READY_KEY) === "1";
+}
+
 export function clearInitialTabBootPending() {
   getSessionStorage()?.removeItem(INITIAL_TAB_BOOT_PENDING_KEY);
+  notifyInitialTabBootChanged();
+}
+
+export function markInitialTabPreloadReady() {
+  getSessionStorage()?.setItem(INITIAL_TAB_PRELOAD_READY_KEY, "1");
   notifyInitialTabBootChanged();
 }

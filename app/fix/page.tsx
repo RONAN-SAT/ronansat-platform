@@ -55,6 +55,7 @@ function FixBoardScreen() {
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-paper-bg bg-dot-pattern px-4 py-4 sm:px-5 lg:px-6">
+      <InitialTabBootReady when={hydrated} />
       <div className="mx-auto max-w-[1640px]">
         <FixPageHeader />
 
@@ -152,6 +153,7 @@ export default function FixPage() {
   if (!session || session.user.role !== "ADMIN") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper-bg">
+        <InitialTabBootReady />
         <div className="workbook-panel bg-accent-3 p-8 font-bold text-white">
           Unauthorized. Admin access required.
         </div>
@@ -161,7 +163,6 @@ export default function FixPage() {
 
   return (
     <FixBoardProvider>
-      <InitialTabBootReady />
       <FixBoardScreen />
     </FixBoardProvider>
   );

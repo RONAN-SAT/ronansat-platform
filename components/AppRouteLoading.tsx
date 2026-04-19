@@ -7,6 +7,7 @@ import {
   INITIAL_TAB_BOOT_CHANGE_EVENT,
   hasSeenInitialTabLoad,
   isInitialTabBootPending,
+  isInitialTabPreloadReady,
 } from "@/lib/initialTabLoad";
 
 export default function AppRouteLoading() {
@@ -15,7 +16,7 @@ export default function AppRouteLoading() {
 
   useLayoutEffect(() => {
     const syncBootState = () => {
-      const shouldShowBootOverlay = !hasSeenInitialTabLoad() || isInitialTabBootPending();
+      const shouldShowBootOverlay = !hasSeenInitialTabLoad() || isInitialTabBootPending() || !isInitialTabPreloadReady();
       setShouldShowPrettyLoader(shouldShowBootOverlay);
       setShouldRender(shouldShowBootOverlay);
     };
