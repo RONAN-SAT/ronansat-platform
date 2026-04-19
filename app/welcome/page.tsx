@@ -2,7 +2,7 @@
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 import { CheckCircle2, Cake, LoaderCircle, UserRound } from "lucide-react";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";

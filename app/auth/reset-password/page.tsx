@@ -1,23 +1,20 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import axios from "axios";
-import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth/client";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import AuthWorkbookShell from "@/components/auth/AuthWorkbookShell";
 import Loading from "@/components/Loading";
 import { getPostAuthRedirectPath } from "@/lib/getPostAuthRedirectPath";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type MessageTone = "success" | "error";
 
 function ResetPasswordForm() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const searchParams = useSearchParams();
-  const email = searchParams.get("email");
-  const code = searchParams.get("code");
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,12 +33,6 @@ function ResetPasswordForm() {
   }
 
   const handleSubmit = async () => {
-    if (!email || !code) {
-      setMessageTone("error");
-      setMessage("This reset link is incomplete. Go back and request a new code.");
-      return;
-    }
-
     if (newPassword !== confirmPassword) {
       setMessageTone("error");
       setMessage("Your passwords do not match.");
@@ -51,17 +42,18 @@ function ResetPasswordForm() {
     setIsSubmitting(true);
 
     try {
-      await axios.post("/api/auth/reset-password", { email, code, newPassword });
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        throw error;
+      }
+
       setMessageTone("success");
       setMessage("Password updated. Redirecting you back to sign in...");
       window.setTimeout(() => router.push("/auth"), 2000);
     } catch (error: unknown) {
       setMessageTone("error");
-      setMessage(
-        axios.isAxiosError(error)
-          ? error.response?.data?.message || "Unable to reset your password."
-          : "Unable to reset your password."
-      );
+      setMessage(error instanceof Error ? error.message : "Unable to reset your password.");
     } finally {
       setIsSubmitting(false);
     }

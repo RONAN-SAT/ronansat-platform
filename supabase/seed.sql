@@ -1,0 +1,2 @@
+-- Local development seed file.
+-- Base roles and permissions are created in migrations so db reset stays reproducible.

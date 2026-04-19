@@ -1,8 +1,7 @@
 // Lấy stats của user
 
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { getServerSession } from "@/lib/auth/server";
 import { userService } from "@/lib/services/userService";
 
 export const userController = {
@@ -10,7 +9,7 @@ export const userController = {
         try {
             void req;
             // ktra đã đăng nhập chưa
-            const session = await getServerSession(authOptions);
+            const session = await getServerSession();
             if (!session) {
                 return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
             }

@@ -1,35 +1,44 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 
 import AdminDashboardClient from "@/components/admin/AdminDashboardClient";
-import { authOptions } from "@/lib/authOptions";
-import dbConnect from "@/lib/mongodb";
-import User from "@/lib/models/User";
-import { hasCompletedProfile } from "@/lib/userProfile";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function AdminDashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession();
 
   if (!session?.user?.id) {
     redirect("/auth");
   }
 
-  await dbConnect();
-  const user = await User.findById(session.user.id).select("role username birthDate").lean();
+  const supabase = await createSupabaseServerClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select(
+      `
+        username,
+        birth_date,
+        user_roles (
+          roles (
+            code
+          )
+        )
+      `
+    )
+    .eq("id", session.user.id)
+    .maybeSingle();
 
-  if (!user) {
+  if (!profile) {
     redirect("/auth");
   }
 
-  if (user.role === "PARENT") {
-    redirect("/parent/dashboard");
-  }
-
-  if (!hasCompletedProfile(user)) {
+  if (!profile.username || !profile.birth_date) {
     redirect("/welcome");
   }
 
-  if (user.role !== "ADMIN") {
+  const rolesValue = (profile.user_roles?.[0] as { roles?: { code?: string } | Array<{ code?: string }> } | undefined)?.roles;
+  const roleCode = Array.isArray(rolesValue) ? rolesValue[0]?.code : rolesValue?.code;
+  if (roleCode !== "admin") {
     redirect("/dashboard");
   }
 

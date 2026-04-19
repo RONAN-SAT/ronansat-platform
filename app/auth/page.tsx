@@ -4,15 +4,13 @@ import { AxiosError } from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getSession, signIn } from "next-auth/react";
-import { useSession } from "next-auth/react";
+import { getSession, signIn, useSession } from "@/lib/auth/client";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import AuthWorkbookShell from "@/components/auth/AuthWorkbookShell";
 import Loading from "@/components/Loading";
-import { API_PATHS } from "@/lib/apiPaths";
-import api from "@/lib/axios";
 import { getPostAuthRedirectPath } from "@/lib/getPostAuthRedirectPath";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const FIELD_CLASS_NAME = "workbook-input";
 const MESSAGE_CLASS_NAME =
@@ -71,9 +69,18 @@ export default function AuthPage() {
         return;
       }
 
-      const response = await api.post(API_PATHS.AUTH_REGISTER, { email, password, name });
+      const supabase = createSupabaseBrowserClient();
+      const response = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
 
-      if (response.status >= 200 && response.status < 300) {
+      if (!response.error) {
         setMessage("Account created. Redirecting into your workbook...");
         await signIn("credentials", { email, password, redirect: false });
         const nextSession = await getSession();
@@ -88,7 +95,7 @@ export default function AuthPage() {
       }
 
       setIsError(true);
-      setMessage(response.data.message || "Registration failed.");
+      setMessage(response.error?.message || "Registration failed.");
     } catch (error: unknown) {
       setIsError(true);
       const axiosError = error as AxiosError<{ message?: string; error?: string }>;
@@ -194,12 +201,14 @@ export default function AuthPage() {
       </form>
 
       <div className="mt-4 grid gap-3">
-        <Link href="/auth/parent" className="workbook-button workbook-button-secondary w-full justify-center">
-          Open Parent Access
-        </Link>
-
         <button
-          onClick={() => signIn("google", { callbackUrl: "/auth/redirect" })}
+          onClick={async () => {
+            const result = await signIn("google", { callbackUrl: "/auth/callback" });
+            if (result?.error) {
+              setIsError(true);
+              setMessage(result.error);
+            }
+          }}
           disabled={loading}
           className="workbook-button workbook-button-secondary w-full justify-center disabled:opacity-60"
           type="button"

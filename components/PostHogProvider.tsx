@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 import posthog from "posthog-js";
 
 const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();

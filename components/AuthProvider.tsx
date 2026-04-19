@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Session } from "next-auth";
-import { SessionProvider, useSession } from "next-auth/react";
+import type { Session } from "@/lib/auth/server";
+import { SessionProvider, useSession } from "@/lib/auth/client";
 
 import { clearClientSessionState } from "@/lib/clearClientSessionState";
 

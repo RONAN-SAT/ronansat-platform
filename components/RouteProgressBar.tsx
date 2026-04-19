@@ -186,7 +186,9 @@ export default function RouteProgressBar() {
       window.clearTimeout(hideTimerRef.current);
     }
 
-    setProgress(100);
+    const completeFrame = window.requestAnimationFrame(() => {
+      setProgress(100);
+    });
 
     hideTimerRef.current = window.setTimeout(() => {
       isNavigatingRef.current = false;
@@ -194,6 +196,14 @@ export default function RouteProgressBar() {
       setIsVisible(false);
       setProgress(0);
     }, hideDelay);
+
+    return () => {
+      window.cancelAnimationFrame(completeFrame);
+      if (hideTimerRef.current !== null) {
+        window.clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+    };
   }, [pathname, searchParams]);
 
   return (

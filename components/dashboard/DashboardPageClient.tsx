@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import LeaderboardTable from "@/components/dashboard/LeaderboardTable";
@@ -61,11 +61,6 @@ export default function DashboardPageClient() {
     }
 
     if (status !== "authenticated" || !session?.user?.role) {
-      return;
-    }
-
-    if (session.user.role === "PARENT") {
-      router.replace("/parent/dashboard");
       return;
     }
 
@@ -167,10 +162,6 @@ export default function DashboardPageClient() {
   }
 
   if (!session?.user?.hasCompletedProfile) {
-    return null;
-  }
-
-  if (session?.user.role === "PARENT") {
     return null;
   }
 

@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "@/lib/auth/server";
 import { z } from "zod";
 
-import { authOptions } from "@/lib/authOptions";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { emptyFixBoard, normalizeFixBoard, type FixBoardState, type FixCard, type FixReportEntry } from "@/lib/fixBoard";
 import dbConnect from "@/lib/mongodb";
 import FixBoard from "@/lib/models/FixBoard";
-import Test from "@/lib/models/Test";
 
 const FIX_BOARD_KEY = "global";
 
@@ -31,6 +30,28 @@ async function getFixBoardDocument() {
 
 function createUniqueId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+async function resolveLegacyTestAndQuestionIds(testId: string, questionId: string) {
+  const supabase = createSupabaseAdminClient();
+  const [{ data: test }, { data: question }] = await Promise.all([
+    supabase
+      .from("tests")
+      .select("id,title,legacy_mongo_id")
+      .or(`id.eq.${testId},legacy_mongo_id.eq.${testId}`)
+      .maybeSingle(),
+    supabase
+      .from("questions")
+      .select("id,legacy_mongo_id")
+      .or(`id.eq.${questionId},legacy_mongo_id.eq.${questionId}`)
+      .maybeSingle(),
+  ]);
+
+  return {
+    testId: test?.legacy_mongo_id ?? testId,
+    questionId: question?.legacy_mongo_id ?? questionId,
+    testTitle: test?.title ?? "Unknown Test",
+  };
 }
 
 function buildCardTitle(card: Pick<FixCard, "section" | "module" | "questionNumber" | "testTitle">) {
@@ -111,20 +132,23 @@ function appendReportToBoard(
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
     const payload = FixReportSchema.parse(body);
+    const resolvedIds = await resolveLegacyTestAndQuestionIds(payload.testId, payload.questionId);
+    const normalizedPayload = {
+      ...payload,
+      testId: resolvedIds.testId,
+      questionId: resolvedIds.questionId,
+    };
 
     await dbConnect();
 
-    const [document, test] = await Promise.all([
-      getFixBoardDocument(),
-      Test.findById(payload.testId).select("title").lean<{ title?: string } | null>(),
-    ]);
+    const document = await getFixBoardDocument();
 
     const board = normalizeFixBoard(document.board);
     const report: FixReportEntry = {
@@ -138,7 +162,7 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    const { board: nextBoard, duplicate } = appendReportToBoard(board, payload, report, test?.title || "Unknown Test");
+    const { board: nextBoard, duplicate } = appendReportToBoard(board, normalizedPayload, report, resolvedIds.testTitle);
     if (duplicate) {
       return NextResponse.json({ error: "You have already reported this question." }, { status: 409 });
     }

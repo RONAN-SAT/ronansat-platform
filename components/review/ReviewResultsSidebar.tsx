@@ -74,6 +74,9 @@ export function ReviewResultsSidebar({
         {filteredResults.map((result) => {
           const isActive = activeTestId === result._id;
           const scoreLabel = getReviewScoreLabel(result);
+          const sectionalLabel = result.isSectional
+            ? [result.sectionalSubject, result.sectionalModule ? `Module ${result.sectionalModule}` : undefined].filter(Boolean).join(" - ")
+            : null;
 
           return (
             <button
@@ -87,6 +90,9 @@ export function ReviewResultsSidebar({
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate font-display text-xl font-black tracking-tight">{result.testId?.title}</p>
+                {sectionalLabel ? (
+                  <p className="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-ink-fg/70">{sectionalLabel}</p>
+                ) : null}
                 <div className="mt-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-ink-fg/70">
                   <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                   {new Date(result.date || result.createdAt || "").toLocaleDateString()}

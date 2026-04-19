@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 
 import Loading from "@/components/Loading";
 import { getPostAuthRedirectPath } from "@/lib/getPostAuthRedirectPath";

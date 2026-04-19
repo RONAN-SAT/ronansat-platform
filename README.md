@@ -1,6 +1,6 @@
 # Bluebook Main
 
-SAT/Bluebook practice platform built with `Next.js 16`, `React 19`, `MongoDB`, `NextAuth`, `Gemini`, and supporting services such as Gmail SMTP and Google OAuth.
+SAT/Bluebook practice platform built with `Next.js 16`, `React 19`, `MongoDB`, `Supabase Auth`, `Supabase Postgres`, and supporting services such as Gmail SMTP and Google OAuth.
 
 This README is intended to help a new contributor:
 
@@ -17,10 +17,8 @@ Main features currently present in the repo:
 - email/password registration and login
 - Google login
 - forgot-password flow via email
-- `STUDENT`, `PARENT`, and `ADMIN` roles
+- `STUDENT` and `ADMIN` roles
 - SAT test taking, results, and dashboard flows
-- AI chat for question explanations through Gemini
-- parent verification via email
 - leaderboard / hall of fame
 
 Default entry flow:
@@ -34,8 +32,7 @@ Default entry flow:
 - `React 19`
 - `TypeScript`
 - `MongoDB + Mongoose`
-- `NextAuth`
-- `Google Gemini API`
+- `Supabase Auth`
 - `Nodemailer (Gmail SMTP)`
 - `Ant Design`
 
@@ -65,7 +62,6 @@ Optional services for full functionality:
 
 - a Gmail account with an App Password for email sending
 - a Google OAuth app
-- a Gemini API key
 
 This repo is now set up around `bun`:
 
@@ -90,12 +86,43 @@ Get `.env.keys` from a trusted teammate, then run:
 ```bash
 bun install
 bun run db
+bun stop db
 bun run dev
 ```
 
 The committed `.env.development` file is encrypted. `bun run dev` now expects the matching local `.env.keys` file, plus an optional `.env.local` for personal overrides.
 
 By default, `bun run dev` points the app at a local MongoDB database at `mongodb://127.0.0.1:27017/ronansat-local`.
+
+`bun run db` now starts both local Supabase and local MongoDB together:
+
+```bash
+bun run db
+bun stop db
+```
+
+If you need direct Supabase commands during migration work, you can still run:
+
+```bash
+bun run supabase:start
+bun run supabase:db:reset
+bun run supabase:migrate:users
+bun run supabase:migrate:tests
+bun run supabase:migrate:user-data
+bun run supabase:migrate:results
+bun run supabase:migrate:all
+```
+
+The MongoDB to Supabase one-time migration scripts now live under `scripts/migrations/mongodb-to-supabase/`.
+
+Current local Supabase ports for this repo:
+
+```txt
+API: http://127.0.0.1:55321
+DB: postgresql://postgres:postgres@127.0.0.1:55322/postgres
+Studio: http://127.0.0.1:55323
+Inbucket: http://127.0.0.1:55324
+```
 
 On first run, if that local database is reachable but empty, `bun run db` automatically copies the latest remote MongoDB data into it.
 
@@ -115,14 +142,13 @@ Typical `.env.local` override example:
 ```env
 LOCAL_MONGODB_URI=mongodb://127.0.0.1:27017/ronansat-local
 REMOTE_MONGODB_URI=<mongodb connection string>
-NEXTAUTH_SECRET=<long random secret>
 ```
 
 Then run:
 
 ```bash
 bun run db
-bun run db -- --stop
+bun stop db
 bun run dev
 ```
 
@@ -134,12 +160,12 @@ http://localhost:3000
 
 Important notes:
 
-- `bun run db` starts the local MongoDB service for the `LOCAL_MONGODB_URI` target when the service is installed but not already running
-- `bun run db -- --stop` stops the local MongoDB service for the `LOCAL_MONGODB_URI` target
+- `bun run db` starts local Supabase and the local MongoDB service for the `LOCAL_MONGODB_URI` target
+- `bun stop db` stops local Supabase and the local MongoDB service for the `LOCAL_MONGODB_URI` target
 - if the local database is empty on first run, `bun run db` automatically copies the current remote MongoDB data into it
 - `bun run db -- --fetch` forces a fresh copy into the local database before you run the app
 - MongoDB is required; `bun run dev` rewrites `MONGODB_URI` to `LOCAL_MONGODB_URI` before startup so the app uses a local database by default
-- `NEXTAUTH_SECRET` is required for auth to work reliably
+- Supabase local keys are required for auth to work reliably
 
 ## 7. Environment variables
 
@@ -157,7 +183,7 @@ Run the app in development with the encrypted shared env loaded through `dotenvx
 
 ```bash
 bun run db
-bun run db -- --stop
+bun stop db
 bun run dev
 ```
 
@@ -175,6 +201,12 @@ bun run build
 bun run start
 ```
 
+Production Supabase schema push uses the encrypted production env plus a separate DB password secret:
+
+```bash
+bun run supabase:db:push:production
+```
+
 To update the shared encrypted development env:
 
 ```bash
@@ -185,7 +217,16 @@ To update the shared encrypted development env:
 
 You can distribute the encrypted `.env.development` through git, and distribute the matching `.env.keys` to trusted developers through a separate secure channel.
 
-`bun run db`, `bun run dev`, `bun run build`, `bun run start`, and `bun run seed` all load env through `dotenvx`. Development commands use `.env.development` plus optional `.env.local` overrides, while production build and start use `.env.production`. The deployed production server runtime decrypts `.env.production` on startup with `DOTENV_PRIVATE_KEY_PRODUCTION`. `bun run db` uses `REMOTE_MONGODB_URI` or the shared `MONGODB_URI` as the fetch source when a first-run bootstrap or `--fetch` is needed, and `bun run dev` points the app itself at `LOCAL_MONGODB_URI`.
+`bun run db`, `bun stop db`, `bun run dev`, `bun run build`, and `bun run start` all load env through `dotenvx`. Development commands use `.env.development` plus optional `.env.local` overrides, while production build and start use `.env.production`. The deployed production server runtime decrypts `.env.production` on startup with `DOTENV_PRIVATE_KEY_PRODUCTION`. `bun run db` uses `REMOTE_MONGODB_URI` or the shared `MONGODB_URI` as the fetch source when a first-run bootstrap or `--fetch` is needed, and `bun run dev` points the app itself at `LOCAL_MONGODB_URI`.
+
+The repo also includes a two-step GitHub Actions pipeline for Supabase schema sync:
+
+- `Database CI` runs only when Supabase migration-related files change
+- that CI workflow starts a local Supabase stack, runs `supabase db lint`, runs `supabase db reset`, and performs a remote `supabase db push --dry-run`
+- on pull requests, the CI workflow comments with the dry-run result so you can see whether the merged migration is expected to apply cleanly
+- `Database Production` runs only after `Database CI` succeeds on `main`
+- the production workflow uses the GitHub `Action Production` environment with `DOTENV_PRIVATE_KEY_PRODUCTION`, `SUPABASE_ACCESS_TOKEN`, and `SUPABASE_DB_PASSWORD`
+- the production push explicitly links to the repo's committed Supabase project ref and runs `bun run supabase:db:push:production`, which applies `--include-all` so the remote schema stays aligned with the committed migration history
 
 Environment variables used by the codebase:
 
@@ -194,13 +235,11 @@ Environment variables used by the codebase:
 | `MONGODB_URI` | Yes | MongoDB connection |
 | `LOCAL_MONGODB_URI` | For local dev | Local MongoDB target used by `bun run dev` |
 | `REMOTE_MONGODB_URI` | Optional | Explicit remote MongoDB source for `bun run db -- --fetch` |
-| `NEXTAUTH_SECRET` | Yes | NextAuth session/token secret |
-| `GEMINI_API_KEY` | For AI chat | `/api/chat` |
-| `EMAIL_USER` | For email features | Forgot password, parent verification |
-| `EMAIL_PASS` | For email features | Gmail App Password for SMTP |
-| `EMAIL_FROM_NAME` | Optional | Sender name for emails |
-| `GOOGLE_CLIENT_ID` | For Google login | NextAuth Google provider |
-| `GOOGLE_CLIENT_SECRET` | For Google login | NextAuth Google provider |
+| `NEXT_PUBLIC_SUPABASE_URL` | For Supabase migration work | Supabase API URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | For Supabase migration work | Supabase anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | For Supabase migration scripts/server-only work | Supabase service role key |
+| `GOOGLE_CLIENT_ID` | For Google login | Supabase Google provider config |
+| `GOOGLE_CLIENT_SECRET` | For Google login | Supabase Google provider config |
 | `NEXT_PUBLIC_DESMOS_URL` | For Desmos-related UI | Public frontend URL |
 | `NEXT_PUBLIC_POSTHOG_KEY` | For PostHog analytics | Public PostHog project API key |
 | `NEXT_PUBLIC_POSTHOG_HOST` | Optional | PostHog ingest host, defaults to `https://us.i.posthog.com` |
@@ -210,12 +249,9 @@ Example `.env.local`:
 ```env
 LOCAL_MONGODB_URI=mongodb://127.0.0.1:27017/ronansat-local
 REMOTE_MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db-name>?retryWrites=true&w=majority
-NEXTAUTH_SECRET=replace-with-a-long-random-secret
-GEMINI_API_KEY=
-
-EMAIL_USER=
-EMAIL_PASS=
-EMAIL_FROM_NAME=Bluebook Support
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:55321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<local supabase anon key>
+SUPABASE_SERVICE_ROLE_KEY=<local supabase service role key>
 
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
@@ -224,6 +260,8 @@ NEXT_PUBLIC_DESMOS_URL=
 NEXT_PUBLIC_POSTHOG_KEY=
 NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 ```
+
+For production migration, keep the production `SUPABASE_SERVICE_ROLE_KEY` out of git and inject it only in your local shell or secure local env file. The one-time migration runbook lives at `scripts/migrations/mongodb-to-supabase/README.md`.
 
 ## 8. Service setup
 
@@ -246,41 +284,7 @@ Atlas example:
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db-name>?retryWrites=true&w=majority
 ```
 
-### 7.2 NEXTAUTH_SECRET
-
-Use a long random string.
-
-Example:
-
-```env
-NEXTAUTH_SECRET=this-should-be-a-long-random-secret-value
-```
-
-### 7.4 Gmail SMTP
-
-Used for:
-
-- forgot-password emails
-- parent verification emails
-
-Setup steps:
-
-1. Sign in to Gmail.
-2. Enable 2-Step Verification.
-3. Create an App Password.
-4. Put that App Password into `EMAIL_PASS`.
-
-Example:
-
-```env
-EMAIL_USER=your-email@gmail.com
-EMAIL_PASS=your-16-char-app-password
-EMAIL_FROM_NAME=Bluebook Support
-```
-
-If you see an error like `WebLoginRequired`, open Gmail in a browser, complete any pending security verification, and create a new App Password.
-
-### 7.5 Google OAuth
+### 7.4 Google OAuth
 
 Used by the Google login button on `/auth`.
 
@@ -291,17 +295,13 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 ```
 
-Typical local callback URL for NextAuth:
+Typical local callback URL for Supabase OAuth:
 
 ```txt
 http://localhost:3000/api/auth/callback/google
 ```
 
-### 7.6 Gemini API
-
-Used for the question explanation chat feature.
-
-### 7.7 PostHog
+### 7.5 PostHog
 
 Used for client-side product analytics and pageview logging.
 
@@ -315,13 +315,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 Notes:
 
 - Leave `NEXT_PUBLIC_POSTHOG_HOST` as `https://us.i.posthog.com` unless your PostHog project uses a different region or a self-hosted instance.
-- Authenticated users are identified from the existing NextAuth session using their Ronan SAT user id, email, role, and profile metadata.
-
-```env
-GEMINI_API_KEY=
-```
-
-If this variable is empty, the chat route will return `Gemini API key not configured`.
+- Authenticated users are identified from the Supabase-backed app session using their Ronan SAT user id, email, role, and profile metadata.
 
 ## 9. Running the project
 
@@ -345,13 +339,8 @@ For local development with encrypted files, keep `DOTENV_PRIVATE_KEY_DEVELOPMENT
 If you are not using the encrypted-file workflow, make sure the Vercel project environment has the same required secrets as your app build, especially:
 
 - `MONGODB_URI`
-- `NEXTAUTH_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
-- `EMAIL_USER`
-- `EMAIL_PASS`
-- `GEMINI_API_KEY`
-
 
 ### Lint
 
@@ -359,38 +348,7 @@ If you are not using the encrypted-file workflow, make sure the Vercel project e
 bun run lint
 ```
 
-## 10. Seeding sample data
-
-The repo includes a seed script:
-
-```bash
-bun run seed
-```
-
-This script:
-
-- reads `MONGODB_URI`
-- creates a sample test
-- inserts sample questions into MongoDB
-
-The repo also contains:
-
-- `parse_and_seed.ts`
-- `reading_sample.txt`
-- `math_sample.txt`
-
-That script is meant for importing a larger sample set, but it does not have its own `package.json` script. Run it manually if needed:
-
-```bash
-bunx tsx parse_and_seed.ts
-```
-
-Warning:
-
-- `parse_and_seed.ts` deletes old data in the `Test` and `Question` collections
-- only run it if you are okay resetting test/question data
-
-## 11. Suggested verification after setup
+## 10. Suggested verification after setup
 
 After configuring the environment and running `bun run dev`, verify in this order:
 
@@ -398,12 +356,11 @@ After configuring the environment and running `bun run dev`, verify in this orde
 2. Confirm the app redirects to `/auth` when logged out.
 3. Create a new account with email/password.
 4. Log back in with that account.
-5. If you seeded data, verify test/question flows.
+5. Verify test/question flows against your current Supabase data.
 6. If email is configured, test forgot password.
-7. If Gemini is configured, test the AI chat in review flow.
-8. If Google OAuth is configured, test Google login.
+7. If Google OAuth is configured, test Google login.
 
-## 12. Available scripts
+## 11. Available scripts
 
 | Command | Meaning |
 | --- | --- |
@@ -411,10 +368,9 @@ After configuring the environment and running `bun run dev`, verify in this orde
 | `bun run build` | Build for production |
 | `bun run start` | Start the production build |
 | `bun run lint` | Run ESLint |
-| `bun run seed` | Seed sample MongoDB data |
 | `bun run changelog` | Generate/update changelog |
 
-## 13. Notable project structure
+## 12. Notable project structure
 
 | Path | Role |
 | --- | --- |
@@ -426,15 +382,12 @@ After configuring the environment and running `bun run dev`, verify in this orde
 | `lib/models/` | Mongoose models |
 | `lib/services/` | Business logic |
 | `lib/controllers/` | Controller layer |
-| `lib/authOptions.ts` | NextAuth configuration |
+| `lib/auth/` | Supabase-backed auth and session helpers |
 | `lib/mongodb.ts` | MongoDB connection |
-| `lib/email.ts` | Gmail SMTP email sending |
 | `next.config.ts` | Next.js config with image settings |
-| `seed.ts` | Basic sample data seed |
-| `parse_and_seed.ts` | Larger sample import script |
 | `question_bank/` | Question content/source data |
 
-## 14. Common issues
+## 13. Common issues
 
 ### `Please define the MONGODB_URI environment variable inside .env.local`
 
@@ -462,16 +415,7 @@ Check:
 
 Check:
 
-- `EMAIL_USER`
-- `EMAIL_PASS`
-- Gmail App Password setup
-- whether the Gmail account has passed Google security verification
-
-### AI chat reports configuration errors
-
-Check:
-
-- `GEMINI_API_KEY`
+- your Supabase email provider configuration
 
 ## 15. Recommended onboarding order
 
@@ -481,12 +425,12 @@ If you want the fastest path to a working local environment:
 2. Get `.env.keys` from a trusted teammate.
 3. Create `.env.local` only if you need local overrides.
 4. Run `bun run dev`.
-5. Run `bun run seed`.
-6. Confirm sign-up and login work.
-7. Enable email, Google login, and Gemini only when needed.
+5. Confirm sign-up and login work.
+6. Verify test and question flows against the current migrated dataset.
+7. Enable email and Google login only when needed.
 
 ## 16. Additional notes
 
 - The local workspace may already contain `node_modules/`, but after a fresh clone you should still run `bun install`.
 - `/api/export-pdf` currently returns `410` and points users toward a client-side print flow instead of server-side PDF export.
-- The current application roles are `STUDENT`, `PARENT`, and `ADMIN`.
+- The current application roles are `STUDENT` and `ADMIN`.

@@ -4,15 +4,19 @@
 
 
     import { NextResponse } from "next/server";
-    import { getServerSession } from "next-auth";
+    import { getServerSession } from "@/lib/auth/server";
     import { ZodError } from "zod";
-    import { authOptions } from "@/lib/authOptions";
     import { questionService } from "@/lib/services/questionService";  // Công nhân được Controller giao việc
 
     export const questionController = {
         async getQuestions(req: Request) {  
             try {
-                const { searchParams } = new URL(req.url);       // Tương tự chatController, nó lấy testId=123 trong url
+                const session = await getServerSession();
+                if (!session?.user?.id) {
+                    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+                }
+
+                const { searchParams } = new URL(req.url);       // Parse query params such as testId=123 from the URL
                 const testId = searchParams.get("testId");       // testId = 123 lấy từ searchParams
 
                 const questions = await questionService.getQuestions(testId);   // Gọi service lấy mảng câu hỏi và gán vào questions
@@ -33,7 +37,7 @@
 
         async createQuestion(req: Request) {
             try {
-                const session = await getServerSession(authOptions);           // lấy session đăng nhập
+                const session = await getServerSession();           // lấy session đăng nhập
                 if (!session || session.user.role !== "ADMIN") {               // Nếu chưa đăng nhập hoặc role k phải admin => Error
                     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
                 }

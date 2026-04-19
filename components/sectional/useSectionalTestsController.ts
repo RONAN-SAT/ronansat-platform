@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 
 import { getClientCache, setClientCache } from "@/lib/clientCache";
 import { fetchDashboardUserResults } from "@/lib/services/dashboardService";

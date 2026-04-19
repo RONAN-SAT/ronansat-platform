@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import bcrypt from "bcryptjs";
+import { getServerSession } from "@/lib/auth/server";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
-import { authOptions } from "@/lib/authOptions";
-import dbConnect from "@/lib/mongodb";
-import User from "@/lib/models/User";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { validatePasswordStrength } from "@/lib/security";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 const updatePasswordSchema = z
   .object({
@@ -22,7 +21,7 @@ const updatePasswordSchema = z
 
 export async function PUT(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session || !session.user || !session.user.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -46,29 +45,29 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: passwordError }, { status: 400 });
     }
 
-    await dbConnect();
+    const publicClient = createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+    const signInResult = await publicClient.auth.signInWithPassword({
+      email: session.user.email,
+      password: parsed.data.currentPassword,
+    });
 
-    const user = await User.findOne({ email: session.user.email }).select("+password");
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    if (!user.password) {
-      return NextResponse.json(
-        { error: "Account does not have a password set. You may be using a third-party login provider." },
-        { status: 400 }
-      );
-    }
-
-    const isPasswordValid = await bcrypt.compare(parsed.data.currentPassword, user.password);
-    if (!isPasswordValid) {
+    if (signInResult.error) {
       return NextResponse.json({ error: "Incorrect current password" }, { status: 401 });
     }
 
-    user.password = await bcrypt.hash(parsed.data.newPassword, 12);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    await user.save();
+    const supabaseAdmin = createSupabaseAdminClient();
+    const updateResult = await supabaseAdmin.auth.admin.updateUserById(session.user.id, {
+      password: parsed.data.newPassword,
+    });
+
+    if (updateResult.error) {
+      return NextResponse.json({ error: updateResult.error.message }, { status: 400 });
+    }
 
     return NextResponse.json({ message: "Password updated successfully" }, { status: 200 });
   } catch (error) {

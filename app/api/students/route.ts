@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "@/lib/auth/server";
 import { z } from "zod";
 
-import { authOptions } from "@/lib/authOptions";
 import dbConnect from "@/lib/mongodb";
 import Student from "@/lib/models/studentCard";
 
@@ -34,7 +33,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 
 import DevToolsBubble from "@/components/DevToolsBubble";
 import Loading from "@/components/Loading";
@@ -36,9 +36,8 @@ export default function AppShell({ children }: AppShellProps) {
     pathname !== WELCOME_ROUTE &&
     !pathname.startsWith("/auth") &&
     !pathname.startsWith("/test/");
-  const shouldForceWelcome =
-    shouldCheckProfile &&
-    !session.user.hasCompletedProfile;
+  const hasCompletedProfile = session?.user.hasCompletedProfile ?? false;
+  const shouldForceWelcome = shouldCheckProfile && !hasCompletedProfile;
 
   useEffect(() => {
     if (shouldForceWelcome) {

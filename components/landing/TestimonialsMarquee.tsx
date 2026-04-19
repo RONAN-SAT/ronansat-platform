@@ -38,7 +38,7 @@ const students = [
     name: "Alex Thompson",
     score: 1510,
     avatar: "AT",
-    review: "The AI chatbot answered all my questions instantly.",
+    review: "The review tools made it easy to understand every missed question.",
   },
   {
     name: "Priya Patel",

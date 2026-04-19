@@ -1,88 +1,78 @@
-import { withAuth } from "next-auth/middleware";
-import type { NextAuthMiddlewareOptions } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
-import type { Role } from "@/lib/permissions";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 const PROFILE_GATE_API_PATH = "/api/user/profile-gate";
 
-type ProfileGatePayload = {
-  hasCompletedProfile?: boolean;
-  role?: Role;
-};
-
-function getHomePath(role?: string) {
-  if (role === "PARENT") {
-    return "/parent/dashboard";
-  }
-
+function getHomePath() {
   return "/dashboard";
 }
 
-const authOptions: NextAuthMiddlewareOptions = {
-  pages: {
-    signIn: "/auth",
-  },
-  callbacks: {
-    authorized: ({ token }) => {
-      return !!token;
-    },
-  },
-};
+export default async function proxy(req: NextRequest) {
+  const response = NextResponse.next({ request: req });
+  const pathname = req.nextUrl.pathname;
 
-export default withAuth(
-  async function proxy(req) {
-    const token = req.nextauth.token;
-    const pathname = req.nextUrl.pathname;
-    let resolvedRole: Role | undefined = token?.role;
-    let hasCompletedProfile = Boolean(token?.hasCompletedProfile);
-
-    if (token) {
-      try {
-        const response = await fetch(new URL(PROFILE_GATE_API_PATH, req.url), {
-          headers: {
-            cookie: req.headers.get("cookie") ?? "",
-          },
-          cache: "no-store",
+  const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+    cookies: {
+      getAll() {
+        return req.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          req.cookies.set(name, value);
+          response.cookies.set(name, value, options);
         });
+      },
+    },
+  });
 
-        if (response.ok) {
-          const payload = (await response.json()) as ProfileGatePayload;
-          resolvedRole = payload.role ?? resolvedRole;
-          hasCompletedProfile = Boolean(payload.hasCompletedProfile);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-          if (!hasCompletedProfile && pathname !== "/welcome") {
-            return NextResponse.redirect(new URL("/welcome", req.url));
-          }
+  if (!user) {
+    return NextResponse.redirect(new URL("/auth", req.url));
+  }
 
-          if (hasCompletedProfile && pathname === "/welcome") {
-            return NextResponse.redirect(new URL(getHomePath(resolvedRole), req.url));
-          }
-        }
-      } catch (error) {
-        console.error("Profile gate proxy fetch failed", error);
+  try {
+    const profileResponse = await fetch(new URL(PROFILE_GATE_API_PATH, req.url), {
+      headers: {
+        cookie: req.headers.get("cookie") ?? "",
+      },
+      cache: "no-store",
+    });
+
+    if (profileResponse.ok) {
+      const payload = (await profileResponse.json()) as {
+        role?: "STUDENT" | "TEACHER" | "ADMIN";
+        hasCompletedProfile?: boolean;
+      };
+      const resolvedRole = payload.role ?? "STUDENT";
+      const hasCompletedProfile = Boolean(payload.hasCompletedProfile);
+
+      if (!hasCompletedProfile && pathname !== "/welcome") {
+        return NextResponse.redirect(new URL("/welcome", req.url));
+      }
+
+      if (hasCompletedProfile && pathname === "/welcome") {
+        return NextResponse.redirect(new URL(getHomePath(), req.url));
+      }
+
+      if (pathname.startsWith("/admin") && resolvedRole !== "ADMIN") {
+        return NextResponse.redirect(new URL(getHomePath(), req.url));
       }
     }
+  } catch (error) {
+    console.error("Profile gate proxy fetch failed", error);
+  }
 
-    if (pathname.startsWith("/admin") && resolvedRole !== "ADMIN") {
-      return NextResponse.redirect(new URL(getHomePath(resolvedRole), req.url));
-    }
-
-    if (pathname.startsWith("/parent") && resolvedRole !== "PARENT" && resolvedRole !== "ADMIN") {
-      return NextResponse.redirect(new URL(getHomePath(resolvedRole), req.url));
-    }
-
-    if (pathname === "/welcome" && hasCompletedProfile) {
-      return NextResponse.redirect(new URL(getHomePath(resolvedRole), req.url));
-    }
-
-    return NextResponse.next();
-  },
-  authOptions
-);
+  return response;
+}
 
 export const config = {
   matcher: [
-    "/parent/:path*",
+    "/admin/:path*",
+    "/welcome",
   ],
 };

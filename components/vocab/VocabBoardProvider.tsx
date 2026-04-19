@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 import { API_PATHS } from "@/lib/apiPaths";
 import { parseDraftToCardFields } from "@/components/vocab/flashCardUtils";
 import {

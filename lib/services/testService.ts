@@ -1,16 +1,29 @@
-import { PipelineStage, Types } from "mongoose";
 import { z } from "zod";
 
-import dbConnect from "@/lib/mongodb";
-import Question from "@/lib/models/Question";
-import Test from "@/lib/models/Test";
-import { getSectionQueryNames, isVerbalSection, MATH_SECTION, VERBAL_SECTION } from "@/lib/sections";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { MATH_SECTION, VERBAL_SECTION, isVerbalSection } from "@/lib/sections";
 import { TestValidationSchema, type TestInput } from "@/lib/schema/test";
 
 type SortableTestField = "createdAt" | "title";
 type TestFilters = {
   period?: string | null;
   subject?: string | null;
+};
+
+type RawTestRow = {
+  id: string;
+  title: string;
+  difficulty: string | null;
+  time_limit_minutes: number;
+  created_at: string;
+  test_sections: Array<{
+    id: string;
+    name: string;
+    module_number: number | null;
+    question_count: number;
+    time_limit_minutes: number;
+    display_order: number;
+  }> | null;
 };
 
 const MONTH_INDEX: Record<string, number> = {
@@ -27,55 +40,6 @@ const MONTH_INDEX: Record<string, number> = {
   november: 11,
   december: 12,
 };
-
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function buildPeriodFilter(period?: string | null) {
-  if (!period || period === "All") {
-    return {};
-  }
-
-  if (period === "Other") {
-    return {
-      title: {
-        $not: /^[A-Za-z]+ \d{4}\b/,
-      },
-    };
-  }
-
-  return {
-    title: {
-      $regex: new RegExp(`^${escapeRegex(period)}(?:\\s|$)`, "i"),
-    },
-  };
-}
-
-function buildSubjectFilter(subject?: string | null) {
-  if (!subject) {
-    return {};
-  }
-
-  const sectionName = subject === "math" ? MATH_SECTION : VERBAL_SECTION;
-  const sectionNames = getSectionQueryNames(sectionName);
-
-  return {
-    sections: {
-      $elemMatch: {
-        name: { $in: sectionNames },
-        questionsCount: { $gt: 0 },
-      },
-    },
-  };
-}
-
-function buildMongoFilter(filters: TestFilters) {
-  return {
-    ...buildPeriodFilter(filters.period),
-    ...buildSubjectFilter(filters.subject),
-  };
-}
 
 function getTestPeriodLabel(title: string) {
   const parts = title.split(" ");
@@ -113,191 +77,194 @@ function sortPeriods(periods: string[]) {
   });
 }
 
-async function getAvailablePeriods(filters: TestFilters) {
-  const metadataFilter = buildMongoFilter({
-    ...filters,
-    period: null,
-  });
-  const tests = await Test.find(metadataFilter).select("title").lean();
-  const periods = Array.from(new Set(tests.map((test) => getTestPeriodLabel(test.title))));
-
-  return ["All", ...sortPeriods(periods)];
-}
-
-function buildPeriodSortStages(sortOrder: "asc" | "desc"): PipelineStage[] {
-  const sortDirection: 1 | -1 = sortOrder === "asc" ? 1 : -1;
-  const monthBranches = Object.entries(MONTH_INDEX).map(([monthName, monthIndex]) => ({
-    case: { $eq: [{ $toLower: { $arrayElemAt: [{ $split: ["$title", " "] }, 0] } }, monthName] },
-    then: monthIndex,
-  }));
-
-  return [
-    {
-      $addFields: {
-        __titleParts: { $split: ["$title", " "] },
-      },
-    },
-    {
-      $addFields: {
-        __sortMonth: {
-          $switch: {
-            branches: monthBranches,
-            default: 0,
-          },
-        },
-        __sortYear: {
-          $convert: {
-            input: { $arrayElemAt: ["$__titleParts", 1] },
-            to: "int",
-            onError: 0,
-            onNull: 0,
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        __periodSortValue: {
-          $add: [{ $multiply: ["$__sortYear", 100] }, "$__sortMonth"],
-        },
-      },
-    },
-    {
-      $sort: {
-        __periodSortValue: sortDirection,
-        title: 1 as const,
-      },
-    },
-    {
-      $project: {
-        __titleParts: 0,
-        __sortMonth: 0,
-        __sortYear: 0,
-        __periodSortValue: 0,
-      },
-    },
-  ];
-}
-
-async function getPaginatedTests(
-  filter: ReturnType<typeof buildMongoFilter>,
-  page: number,
-  limit: number,
-  sortBy: SortableTestField,
-  sortOrder: "asc" | "desc",
-) {
-  const usePagination = Number.isFinite(limit) && limit > 0;
-  const skip = usePagination ? (page - 1) * limit : 0;
-
-  if (sortBy === "createdAt") {
-    const pipeline: PipelineStage[] = [
-      { $match: filter },
-      ...buildPeriodSortStages(sortOrder),
-      ...(usePagination ? [{ $skip: skip }, { $limit: limit }] : []),
-    ];
-
-    return Test.aggregate(pipeline);
+function matchesPeriod(title: string, period?: string | null) {
+  if (!period || period === "All") {
+    return true;
   }
 
-  let query = Test.find(filter).sort({ title: sortOrder === "asc" ? 1 : -1 }).skip(skip);
-
-  if (usePagination) {
-    query = query.limit(limit);
+  if (period === "Other") {
+    return !/^[A-Za-z]+ \d{4}\b/.test(title);
   }
 
-  return query.lean();
+  return title.toLowerCase().startsWith(period.toLowerCase());
 }
 
-async function getQuestionCountsForTests(testIds: Types.ObjectId[]) {
-  const questionCountsData = await Question.aggregate([
-    { $match: { testId: { $in: testIds } } },
-    {
-      $group: {
-        _id: { testId: "$testId", section: "$section", module: "$module" },
-        count: { $sum: 1 },
-      },
-    },
-  ]);
+function matchesSubject(sections: RawTestRow["test_sections"], subject?: string | null) {
+  if (!subject) {
+    return true;
+  }
 
-  return questionCountsData;
-}
+  const target = subject === "math" ? MATH_SECTION : VERBAL_SECTION;
+  return (sections ?? []).some((section) => {
+    if (section.question_count <= 0) {
+      return false;
+    }
 
-function attachQuestionCounts<T extends { _id: Types.ObjectId }>(
-  tests: T[],
-  questionCountsData: Array<{
-    _id: { testId: Types.ObjectId; section: string; module: number };
-    count: number;
-  }>,
-) {
-  return tests.map((test) => {
-    const counts = { rw_1: 0, rw_2: 0, math_1: 0, math_2: 0 };
-
-    questionCountsData.forEach((questionCount) => {
-      if (questionCount._id.testId.toString() === test._id.toString()) {
-        const sectionPrefix = isVerbalSection(questionCount._id.section) ? "rw" : "math";
-        const key = `${sectionPrefix}_${questionCount._id.module}` as keyof typeof counts;
-        counts[key] = questionCount.count;
-      }
-    });
-
-    return { ...test, questionCounts: counts };
+    return target === MATH_SECTION ? section.name === MATH_SECTION : isVerbalSection(section.name);
   });
+}
+
+function toLegacyTestShape(test: RawTestRow) {
+  const sections = [...(test.test_sections ?? [])]
+    .sort((left, right) => left.display_order - right.display_order)
+    .map((section) => ({
+      name: section.name,
+      questionsCount: section.question_count,
+      timeLimit: section.time_limit_minutes,
+    }));
+
+  const questionCounts = { rw_1: 0, rw_2: 0, math_1: 0, math_2: 0 };
+  for (const section of test.test_sections ?? []) {
+    const moduleNumber = section.module_number ?? 0;
+    if (moduleNumber !== 1 && moduleNumber !== 2) {
+      continue;
+    }
+
+    const key = `${isVerbalSection(section.name) ? "rw" : "math"}_${moduleNumber}` as keyof typeof questionCounts;
+    questionCounts[key] = section.question_count;
+  }
+
+  return {
+    _id: test.id,
+    title: test.title,
+    timeLimit: test.time_limit_minutes,
+    difficulty: test.difficulty ?? "medium",
+    sections,
+    questionCounts,
+    createdAt: test.created_at,
+  };
 }
 
 export const testService = {
   async getTests(page: number, limit: number, sortBy: string, sortOrder: string, filters: TestFilters = {}) {
+    const supabase = createSupabaseAdminClient();
     const normalizedSortBy: SortableTestField = sortBy === "title" ? "title" : "createdAt";
     const normalizedSortOrder: "asc" | "desc" = sortOrder === "asc" ? "asc" : "desc";
-    const mongoFilter = buildMongoFilter(filters);
 
-    await dbConnect();
+    const { data, error } = await supabase
+      .from("tests")
+      .select(
+        `
+          id,
+          title,
+          difficulty,
+          time_limit_minutes,
+          created_at,
+          test_sections (
+            id,
+            name,
+            module_number,
+            question_count,
+            time_limit_minutes,
+            display_order
+          )
+        `
+      )
+      .eq("visibility", "public")
+      .eq("status", "published");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const rows = (data ?? []) as RawTestRow[];
+    const filtered = rows.filter((test) => matchesPeriod(test.title, filters.period) && matchesSubject(test.test_sections, filters.subject));
+    const availablePeriods = ["All", ...sortPeriods(Array.from(new Set(rows.map((test) => getTestPeriodLabel(test.title)))))];
+
+    filtered.sort((left, right) => {
+      if (normalizedSortBy === "title") {
+        return normalizedSortOrder === "asc" ? left.title.localeCompare(right.title) : right.title.localeCompare(left.title);
+      }
+
+      const diff = getPeriodSortValue(getTestPeriodLabel(right.title)) - getPeriodSortValue(getTestPeriodLabel(left.title));
+      return normalizedSortOrder === "asc" ? -diff : diff;
+    });
 
     const usePagination = Number.isFinite(limit) && limit > 0;
-    const [totalTests, tests, availablePeriods] = await Promise.all([
-      Test.countDocuments(mongoFilter),
-      getPaginatedTests(mongoFilter, page, limit, normalizedSortBy, normalizedSortOrder),
-      getAvailablePeriods(filters),
-    ]);
-
-    const questionCountsData = await getQuestionCountsForTests(tests.map((test) => test._id as Types.ObjectId));
-    const testsWithCounts = attachQuestionCounts(tests, questionCountsData);
+    const paged = usePagination ? filtered.slice((page - 1) * limit, (page - 1) * limit + limit) : filtered;
 
     return {
-      tests: testsWithCounts,
+      tests: paged.map(toLegacyTestShape),
       availablePeriods,
       pagination: {
-        total: totalTests,
+        total: filtered.length,
         page,
-        limit: usePagination ? limit : totalTests,
-        totalPages: usePagination ? Math.ceil(totalTests / limit) : 1,
+        limit: usePagination ? limit : filtered.length,
+        totalPages: usePagination ? Math.max(1, Math.ceil(filtered.length / limit)) : 1,
       },
     };
   },
 
   async getTestById(testId: string) {
-    await dbConnect();
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("tests")
+      .select(
+        `
+          id,
+          title,
+          difficulty,
+          time_limit_minutes,
+          created_at,
+          test_sections (
+            id,
+            name,
+            module_number,
+            question_count,
+            time_limit_minutes,
+            display_order
+          )
+        `
+      )
+      .eq("id", testId)
+      .maybeSingle();
 
-    const test = await Test.findById(testId).lean();
-    if (!test) {
+    if (error || !data) {
       throw new Error("Test not found");
     }
 
-    const questionCountsData = await getQuestionCountsForTests([test._id as Types.ObjectId]);
-    const [testWithCounts] = attachQuestionCounts([test], questionCountsData);
-
-    return testWithCounts;
+    return toLegacyTestShape(data as RawTestRow);
   },
 
   async createTest(data: unknown) {
     try {
       const validatedData: TestInput = TestValidationSchema.parse(data);
-
       if (!validatedData.timeLimit) {
         validatedData.timeLimit = validatedData.sections.reduce((acc, sec) => acc + sec.timeLimit, 0);
       }
 
-      await dbConnect();
-      return await Test.create(validatedData);
+      const supabase = createSupabaseAdminClient();
+      const { data: createdTest, error: testError } = await supabase
+        .from("tests")
+        .insert({
+          title: validatedData.title,
+          time_limit_minutes: validatedData.timeLimit,
+          difficulty: validatedData.difficulty ?? "medium",
+          visibility: "public",
+          status: "published",
+        })
+        .select("id")
+        .single();
+
+      if (testError || !createdTest) {
+        throw new Error(testError?.message ?? "Failed to create test");
+      }
+
+      const sectionRows = validatedData.sections.map((section, index) => ({
+        test_id: createdTest.id,
+        name: section.name,
+        module_number: null,
+        display_order: index + 1,
+        question_count: section.questionsCount,
+        time_limit_minutes: section.timeLimit,
+      }));
+
+      const { error: sectionError } = await supabase.from("test_sections").insert(sectionRows);
+      if (sectionError) {
+        throw new Error(sectionError.message);
+      }
+
+      return this.getTestById(createdTest.id);
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         const validationError = new Error("Validation Error") as Error & {

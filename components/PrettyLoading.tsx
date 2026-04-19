@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState, type CSSProperties } from "react";
+import { useLayoutEffect, useRef, type CSSProperties } from "react";
 
 type LoadingWindow = Window & {
   __ronanAppLoadingStartedAt?: number;
@@ -22,20 +22,22 @@ function getSharedAnimationOffset() {
 }
 
 export default function PrettyLoading() {
-  const [animationStyle, setAnimationStyle] = useState<CSSProperties>(
-    () => ({ "--app-loading-animation-offset": "0ms" }) as CSSProperties,
-  );
+  const sceneRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
-    setAnimationStyle({
-      "--app-loading-animation-offset": getSharedAnimationOffset(),
-    } as CSSProperties);
+    const scene = sceneRef.current;
+    if (!scene) {
+      return;
+    }
+
+    scene.style.setProperty("--app-loading-animation-offset", getSharedAnimationOffset());
   }, []);
 
   return (
     <div
+      ref={sceneRef}
       className="app-loading-scene bg-dot-pattern fixed inset-0 z-[80] overflow-hidden bg-paper-bg px-4 py-5 text-ink-fg sm:px-6 sm:py-10"
-      style={animationStyle}
+      style={{ "--app-loading-animation-offset": "0ms" } as CSSProperties}
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="app-loading-orbit app-loading-orbit-a" />

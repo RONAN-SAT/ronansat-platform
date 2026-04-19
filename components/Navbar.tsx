@@ -2,12 +2,13 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { signOut, useSession } from "@/lib/auth/client";
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart2,
   BookOpen,
+  CircleAlert,
   LayoutDashboard,
   LibraryBig,
   LogOut,
@@ -28,6 +29,8 @@ type NavItemConfig = {
   icon: LucideIcon;
   tone: "primary" | "accent-1" | "accent-2" | "accent-3" | "surface";
   matches: string[];
+  queryKey?: string;
+  queryValue?: string;
 };
 
 const STUDENT_ITEMS: NavItemConfig[] = [
@@ -37,7 +40,7 @@ const STUDENT_ITEMS: NavItemConfig[] = [
     mobileLabel: "Home",
     icon: LayoutDashboard,
     tone: "primary",
-    matches: ["/dashboard", "/parent/dashboard"],
+    matches: ["/dashboard"],
   },
   {
     href: "/full-length",
@@ -62,6 +65,16 @@ const STUDENT_ITEMS: NavItemConfig[] = [
     icon: BarChart2,
     tone: "primary",
     matches: ["/review"],
+  },
+  {
+    href: "/review?view=error-log",
+    label: "Error log",
+    mobileLabel: "Errors",
+    icon: CircleAlert,
+    tone: "accent-3",
+    matches: ["/review"],
+    queryKey: "view",
+    queryValue: "error-log",
   },
   {
     href: "/vocab",
@@ -89,33 +102,6 @@ const STUDENT_ITEMS: NavItemConfig[] = [
   },
 ];
 
-const PARENT_ITEMS: NavItemConfig[] = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    mobileLabel: "Home",
-    icon: LayoutDashboard,
-    tone: "primary",
-    matches: ["/dashboard", "/parent/dashboard"],
-  },
-  {
-    href: "/hall-of-fame",
-    label: "Hall of Fame",
-    mobileLabel: "Hall",
-    icon: Trophy,
-    tone: "primary",
-    matches: ["/hall-of-fame"],
-  },
-  {
-    href: "/settings",
-    label: "Settings",
-    mobileLabel: "Settings",
-    icon: Settings,
-    tone: "surface",
-    matches: ["/settings"],
-  },
-];
-
 const ADMIN_ITEMS: NavItemConfig[] = [
   {
     href: "/dashboard",
@@ -123,7 +109,7 @@ const ADMIN_ITEMS: NavItemConfig[] = [
     mobileLabel: "Home",
     icon: LayoutDashboard,
     tone: "primary",
-    matches: ["/dashboard", "/parent/dashboard"],
+    matches: ["/dashboard"],
   },
   {
     href: "/full-length",
@@ -148,6 +134,16 @@ const ADMIN_ITEMS: NavItemConfig[] = [
     icon: BarChart2,
     tone: "surface",
     matches: ["/review"],
+  },
+  {
+    href: "/review?view=error-log",
+    label: "Error log",
+    mobileLabel: "Errors",
+    icon: CircleAlert,
+    tone: "accent-3",
+    matches: ["/review"],
+    queryKey: "view",
+    queryValue: "error-log",
   },
   {
     href: "/vocab",
@@ -195,12 +191,12 @@ export default function Navbar() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isReady = status !== "loading" && status !== "unauthenticated" && !!session;
   const isHiddenRoute = pathname.startsWith("/test/") || pathname.startsWith("/auth");
-  const isParent = session?.user.role === "PARENT";
   const isAdmin = session?.user.role === "ADMIN";
-  const homeHref = isParent ? "/parent/dashboard" : "/dashboard";
-  const navItems = isAdmin ? ADMIN_ITEMS : isParent ? PARENT_ITEMS : STUDENT_ITEMS;
+  const homeHref = "/dashboard";
+  const navItems = isAdmin ? ADMIN_ITEMS : STUDENT_ITEMS;
   const displayName = session?.user.name || session?.user.email?.split("@")[0] || "Scholar";
 
   useEffect(() => {
@@ -241,7 +237,7 @@ export default function Navbar() {
         <div className="workbook-scrollbar bg-dot-pattern flex-1 overflow-y-auto px-3 py-4">
           <div className="space-y-2.5">
             {navItems.map((item) => (
-              <NavItem key={item.href} item={item} pathname={pathname} compact={false} />
+              <NavItem key={item.href} item={item} pathname={pathname} searchParams={searchParams} compact={false} />
             ))}
           </div>
         </div>
@@ -267,7 +263,7 @@ export default function Navbar() {
         <div className="bg-dot-pattern overflow-x-auto px-2 py-2 sm:px-3 sm:py-3">
           <div className="flex min-w-max gap-1.5 sm:gap-2">
             {navItems.map((item) => (
-              <NavItem key={item.href} item={item} pathname={pathname} compact />
+              <NavItem key={item.href} item={item} pathname={pathname} searchParams={searchParams} compact />
             ))}
             <button
               onClick={() => void handleSignOut()}
@@ -287,13 +283,18 @@ export default function Navbar() {
 function NavItem({
   item,
   pathname,
+  searchParams,
   compact,
 }: {
   item: NavItemConfig;
   pathname: string;
+  searchParams: ReturnType<typeof useSearchParams>;
   compact: boolean;
 }) {
-  const active = item.matches.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  const matchesPath = item.matches.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  const matchesQuery = item.queryKey ? searchParams.get(item.queryKey) === item.queryValue : true;
+  const isErrorLogView = pathname === "/review" && searchParams.get("view") === "error-log";
+  const active = item.queryKey ? matchesPath && matchesQuery : matchesPath && (!isErrorLogView || pathname !== "/review");
   const Icon = item.icon;
 
   return (

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "@/lib/auth/server";
 
-import { authOptions } from "@/lib/authOptions";
-import dbConnect from "@/lib/mongodb";
-import Question from "@/lib/models/Question";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type RouteContext = {
     params: Promise<{ id: string }>;
@@ -13,15 +11,19 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     try {
         const { id } = await params;
 
-        const session = await getServerSession(authOptions);
+        const session = await getServerSession();
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        await dbConnect();
+        const supabase = createSupabaseAdminClient();
+        const { data: question, error } = await supabase
+            .from("questions")
+            .select("explanation")
+            .eq("id", id)
+            .maybeSingle();
 
-        const question = await Question.findById(id).select("explanation");
-        if (!question) {
+        if (error || !question) {
             return NextResponse.json({ error: "Question not found" }, { status: 404 });
         }
 

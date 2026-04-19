@@ -175,6 +175,14 @@ function runCommand(command: string, args: string[]) {
   });
 }
 
+async function startSupabaseService() {
+  await runCommand("bunx", ["--bun", "supabase", "start"]);
+}
+
+async function stopSupabaseService() {
+  await runCommand("bunx", ["--bun", "supabase", "stop"]);
+}
+
 async function startMongoService() {
   switch (process.platform) {
     case "darwin":
@@ -239,11 +247,18 @@ async function main() {
   assertLocalTarget(localUri);
 
   if (stopDb) {
+    console.log("Stopping local Supabase...");
+    await stopSupabaseService();
+    console.log("Local Supabase stop command completed.");
     console.log(`Stopping local MongoDB at ${localMeta.host}/${localMeta.databaseName}...`);
     await stopMongoService();
     console.log("Local MongoDB stop command completed.");
     return;
   }
+
+  console.log("Starting local Supabase...");
+  await startSupabaseService();
+  console.log("Local Supabase is ready.");
 
   if (await canConnect(localUri)) {
     console.log(`Local MongoDB is already running at ${localMeta.host}/${localMeta.databaseName}.`);

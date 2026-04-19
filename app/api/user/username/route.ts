@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "@/lib/auth/server";
 
-import { authOptions } from "@/lib/authOptions";
-import dbConnect from "@/lib/mongodb";
-import User from "@/lib/models/User";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   USERNAME_REQUIREMENTS,
   isValidUsername,
@@ -11,7 +9,7 @@ import {
 } from "@/lib/userProfile";
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await getServerSession();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -26,8 +24,12 @@ export async function GET(req: Request) {
     );
   }
 
-  await dbConnect();
-  const existingUser = await User.exists({ username });
+  const supabase = await createSupabaseServerClient();
+  const { data: existingUser } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
 
   return NextResponse.json({ isAvailable: !existingUser, username }, { status: 200 });
 }

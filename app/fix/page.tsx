@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import Loading from "@/components/Loading";

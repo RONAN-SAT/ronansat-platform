@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "@/lib/auth/server";
 import { z } from "zod";
 
-import { authOptions } from "@/lib/authOptions";
-import dbConnect from "@/lib/mongodb";
-import User from "@/lib/models/User";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   USERNAME_REQUIREMENTS,
-  hasCompletedProfile,
   isValidBirthDate,
   isValidUsername,
   normalizeUsername,
@@ -19,33 +16,11 @@ const onboardingSchema = z.object({
 });
 
 function getOnboardingErrorResponse(error: unknown) {
-  if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) {
+  if (typeof error === "object" && error !== null && "code" in error && error.code === "23505") {
     return {
       status: 409,
       body: {
         error: "That username is already taken.",
-      },
-    };
-  }
-
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "name" in error &&
-    error.name === "ValidationError" &&
-    "errors" in error &&
-    typeof error.errors === "object" &&
-    error.errors !== null
-  ) {
-    const details = Object.values(error.errors)
-      .map((issue) => (typeof issue === "object" && issue !== null && "message" in issue ? issue.message : ""))
-      .filter((message): message is string => typeof message === "string" && message.length > 0)
-      .join(" ");
-
-    return {
-      status: 400,
-      body: {
-        error: details || "Profile validation failed.",
       },
     };
   }
@@ -65,7 +40,7 @@ export async function PUT(req: Request) {
   let sessionUserId: string | undefined;
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     sessionUserId = session?.user?.id;
 
     if (!session?.user?.id) {
@@ -87,38 +62,47 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Enter a valid birthdate." }, { status: 400 });
     }
 
-    await dbConnect();
+    const supabase = await createSupabaseServerClient();
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("username,birth_date")
+      .eq("id", session.user.id)
+      .maybeSingle();
 
-    const user = await User.findById(session.user.id).select("role username birthDate");
-    if (!user) {
+    if (profileError || !profile) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (user.username && user.username !== username) {
+    if (profile.username && profile.username !== username) {
       return NextResponse.json({ error: "Username is already locked for this account." }, { status: 409 });
     }
 
-    if (user.birthDate && user.birthDate !== birthDate) {
+    if (profile.birth_date && profile.birth_date !== birthDate) {
       return NextResponse.json({ error: "Birthdate is already locked for this account." }, { status: 409 });
     }
 
-    if (!user.username) {
-      user.username = username;
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        username: profile.username ?? username,
+        birth_date: profile.birth_date ?? birthDate,
+      })
+      .eq("id", session.user.id);
+
+    if (updateError) {
+      throw updateError;
     }
 
-    if (!user.birthDate) {
-      user.birthDate = birthDate;
-    }
-
-    await user.save();
+    const finalUsername = profile.username ?? username;
+    const finalBirthDate = profile.birth_date ?? birthDate;
 
     return NextResponse.json(
       {
         message: "Welcome setup saved.",
         user: {
-          username: user.username,
-          birthDate: user.birthDate,
-          hasCompletedProfile: hasCompletedProfile(user),
+          username: finalUsername,
+          birthDate: finalBirthDate,
+          hasCompletedProfile: Boolean(finalUsername && finalBirthDate),
         },
       },
       { status: 200 }

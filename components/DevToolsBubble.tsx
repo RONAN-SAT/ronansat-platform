@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 import { Bug, EyeOff, RefreshCw, Wrench } from "lucide-react";
 
 import api from "@/lib/axios";

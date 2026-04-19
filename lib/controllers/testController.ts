@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "@/lib/auth/server";
 
-import { authOptions } from "@/lib/authOptions";
 import { testService } from "@/lib/services/testService";
 
 export const testController = {
   async getTests(req: Request) {
     try {
+      const session = await getServerSession();
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
       const { searchParams } = new URL(req.url);
       const page = Number.parseInt(searchParams.get("page") || "1", 10);
       const limit = Number.parseInt(searchParams.get("limit") || "10", 10);
@@ -29,7 +33,7 @@ export const testController = {
 
   async createTest(req: Request) {
     try {
-      const session = await getServerSession(authOptions);
+      const session = await getServerSession();
       if (!session || session.user.role !== "ADMIN") {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }

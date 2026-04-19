@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { getServerSession } from "next-auth";
 import { Bricolage_Grotesque, DM_Sans, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 
 import AppRouteLoading from "@/components/AppRouteLoading";
 import RouteProgressBar from "@/components/RouteProgressBar";
@@ -11,7 +9,7 @@ import AuthProvider from "@/components/AuthProvider";
 import PostHogProvider from "@/components/PostHogProvider";
 import { WorkbookToaster } from "@/components/ui/WorkbookToaster";
 import { VocabBoardProvider } from "@/components/vocab/VocabBoardProvider";
-import { authOptions } from "@/lib/authOptions";
+import { getServerSession } from "@/lib/auth/server";
 import { INITIAL_TAB_BOOT_PENDING_KEY, INITIAL_TAB_LOAD_SEEN_KEY, INITIAL_TAB_PRELOAD_READY_KEY } from "@/lib/initialTabLoad";
 import "./globals.css";
 
@@ -47,13 +45,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession(authOptions);
-
-  return (
-    <html lang="en">
-      <body className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} antialiased`}>
-        <Script id="initial-tab-load" strategy="beforeInteractive">
-          {`try {
+  const session = await getServerSession();
+  const initialTabLoadScript = `try {
   var storage = window.sessionStorage;
   if (storage.getItem(${JSON.stringify(INITIAL_TAB_LOAD_SEEN_KEY)}) !== "1") {
     storage.setItem(${JSON.stringify(INITIAL_TAB_LOAD_SEEN_KEY)}, "1");
@@ -62,8 +55,12 @@ export default async function RootLayout({
   }
 } catch (error) {
   // Ignore storage initialization failures.
-}`}
-        </Script>
+}`;
+
+  return (
+    <html lang="en">
+      <body className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} antialiased`}>
+        <script id="initial-tab-load" dangerouslySetInnerHTML={{ __html: initialTabLoadScript }} />
         <AppRouteLoading />
         <RouteProgressBar />
         <AuthProvider session={session}>

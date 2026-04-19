@@ -1,34 +1,70 @@
-import dbConnect from "@/lib/mongodb";
-import User from "@/lib/models/User";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const userService = {
   async getUserProfile(userId: string) {
-    await dbConnect();
+    const supabase = createSupabaseAdminClient();
+    const [{ data: profile, error: profileError }, { data: authUser, error: authError }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select(
+          `
+            display_name,
+            username,
+            birth_date,
+            created_at,
+            updated_at,
+            user_roles (
+              roles (
+                code
+              )
+            )
+          `
+        )
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase.auth.admin.getUserById(userId),
+    ]);
 
-    const user = await User.findById(userId)
-      .select("name username birthDate email role highestScore lastTestDate createdAt updatedAt")
-      .lean();
-
-    if (!user) {
+    if (profileError || !profile || authError || !authUser.user) {
       throw new Error("User not found");
     }
 
-    return user;
+    const rolesValue = (profile.user_roles?.[0] as { roles?: { code?: string } | Array<{ code?: string }> } | undefined)?.roles;
+    const roleCode = Array.isArray(rolesValue) ? rolesValue[0]?.code : rolesValue?.code;
+
+    return {
+      name: profile.display_name,
+      username: profile.username,
+      birthDate: profile.birth_date,
+      email: authUser.user.email,
+      role: roleCode === "admin" ? "ADMIN" : roleCode === "teacher" ? "TEACHER" : "STUDENT",
+      createdAt: profile.created_at,
+      updatedAt: profile.updated_at,
+    };
   },
 
   async getUserStats(userId: string) {
-    await dbConnect();
+    const supabase = createSupabaseAdminClient();
+    const [{ count: testsTaken, error: countError }, { data: bestAttempt, error: bestError }] = await Promise.all([
+      supabase.from("test_attempts").select("id", { count: "exact", head: true }).eq("user_id", userId),
+      supabase
+        .from("test_attempts")
+        .select("score")
+        .eq("user_id", userId)
+        .eq("mode", "full")
+        .not("score", "is", null)
+        .order("score", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-    const user = await User.findById(userId).select("testsTaken highestScore").lean();
-    if (!user) {
+    if (countError || bestError) {
       throw new Error("User not found");
     }
 
-    const stats = {
-      testsTaken: user.testsTaken.length,
-      highestScore: user.highestScore,
+    return {
+      testsTaken: testsTaken ?? 0,
+      highestScore: bestAttempt?.score ?? 0,
     };
-
-    return stats;
   },
 };

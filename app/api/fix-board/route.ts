@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "@/lib/auth/server";
 
-import { authOptions } from "@/lib/authOptions";
 import { emptyFixBoard, normalizeFixBoard } from "@/lib/fixBoard";
 import dbConnect from "@/lib/mongodb";
 import FixBoard from "@/lib/models/FixBoard";
@@ -22,7 +21,7 @@ function isAdminSession(role?: string) {
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session || !isAdminSession(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -39,7 +38,7 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session || !isAdminSession(session.user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

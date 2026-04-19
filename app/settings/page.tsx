@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 import { useState, useEffect } from "react";
 import { CheckCircle, Lock, MonitorPlay, TriangleAlert, User } from "lucide-react";
 
@@ -108,9 +108,9 @@ export default function SettingsPage() {
                     <div className="p-6 space-y-5">
                         <div className="max-w-3xl">
                             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-ink-fg">Room Style</p>
-                            <p className="mt-2 text-sm leading-6 text-ink-fg/70">
-                                Choose which exam room chrome you want during live tests. This preference is saved locally on this device.
-                            </p>
+                             <p className="mt-2 text-sm leading-6 text-ink-fg/70">
+                                 Choose which exam room chrome you want during live tests. This preference now syncs to your account and is also cached locally for faster loading.
+                             </p>
                         </div>
 
                         <div className="relative">

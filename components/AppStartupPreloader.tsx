@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 
 import { markInitialTabPreloadReady } from "@/lib/initialTabLoad";
 import { preloadInitialAppData } from "@/lib/startupPreload";

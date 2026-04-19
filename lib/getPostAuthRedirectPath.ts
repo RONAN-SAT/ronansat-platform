@@ -1,6 +1,6 @@
-import type { Session } from "next-auth";
+import type { AppSessionUser } from "@/lib/auth/session";
 
-type RedirectUser = Pick<Session["user"], "role" | "hasCompletedProfile"> | null | undefined;
+type RedirectUser = Pick<AppSessionUser, "role" | "hasCompletedProfile"> | null | undefined;
 
 export function getPostAuthRedirectPath(user: RedirectUser) {
   if (!user) {
@@ -9,10 +9,6 @@ export function getPostAuthRedirectPath(user: RedirectUser) {
 
   if (!user.hasCompletedProfile) {
     return "/welcome";
-  }
-
-  if (user.role === "PARENT") {
-    return "/parent/dashboard";
   }
 
   return "/dashboard";

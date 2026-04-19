@@ -17,7 +17,7 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - Shared visual foundation in `app/globals.css`, `app/layout.tsx`, and shared shell/navigation components.
 - Public and auth-facing surfaces including `app/auth/**` and any entry flow that users see before reaching the app.
 - Student product surfaces including dashboard, full-length, sectional, review, test-taking, vocab, hall-of-fame, and settings.
-- Parent dashboard surfaces and admin/fix workflows.
+- Admin/fix workflows and remaining secondary surfaces.
 - Shared states such as loading, empty, modal, alert, table, form, and mobile navigation patterns.
 
 ## Non-goals for v0.1
@@ -36,7 +36,7 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 6. Done: redesign the core student dashboards and test-library screens in `app/dashboard/page.tsx`, `app/full-length/page.tsx`, `app/sectional/page.tsx`, `app/hall-of-fame/page.tsx`, and related dashboard components.
 7. Done: redesign the deep-work learning screens in `app/review/page.tsx`, `app/vocab/page.tsx`, `app/fix/page.tsx`, and their main component families while preserving controller logic.
 8. Done: redesign the live test-taking surface in `app/test/[id]/page.tsx` and related test components with special care for timing, density, readability, and press states.
-9. Done: redesign secondary product surfaces including `app/settings/page.tsx`, `app/hall-of-fame/page.tsx`, `app/parent/dashboard/page.tsx`, and `app/admin/page.tsx` so they stay within the same system rather than drifting back to generic panels.
+9. Done: redesign secondary product surfaces including `app/settings/page.tsx`, `app/hall-of-fame/page.tsx`, and `app/admin/page.tsx` so they stay within the same system rather than drifting back to generic panels.
 10. In progress: run a final consistency pass across loading, empty, success, error, and mobile states to remove leftover legacy styling and confirm the entire app feels like one `Living Workbook` product.
 
 ## Phase breakdown
@@ -51,7 +51,7 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 ### Phase 2: Shell and entry
 
 - Redesign the shared navbar and shell containers first so every later screen inherits the right frame.
-- Redesign auth, forgot-password, reset-password, and parent-auth entry points next because they shape first impressions.
+- Redesign auth, forgot-password, and reset-password entry points next because they shape first impressions.
 
 ### Phase 3: Student core flows
 
@@ -66,7 +66,7 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 ### Phase 5: Test and secondary roles
 
 - Redesign live test-taking with extra caution because usability regressions here are costly.
-- Bring settings, parent dashboard, and admin screens into the same design family.
+- Bring settings and admin screens into the same design family.
 
 ### Phase 6: Consistency pass
 
@@ -78,7 +78,6 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - `app/auth/page.tsx`
 - `app/auth/forgot-password/page.tsx`
 - `app/auth/reset-password/page.tsx`
-- `app/auth/parent/page.tsx`
 - `app/dashboard/page.tsx`
 - `app/full-length/page.tsx`
 - `app/sectional/page.tsx`
@@ -88,7 +87,6 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - `app/fix/page.tsx`
 - `app/settings/page.tsx`
 - `app/hall-of-fame/page.tsx`
-- `app/parent/dashboard/page.tsx`
 - `app/admin/page.tsx`
 
 ## Main risks
@@ -96,9 +94,24 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - The current app has multiple visual languages already in production, so token drift is likely unless the foundation lands first.
 - The sibling landing page contains some raw hex values and blur effects that conflict with `DESIGN.md`; visual borrowing must happen at the level of composition and mood, not direct copy-paste.
 - The test-taking flow is operationally sensitive, so visual changes there need stricter verification than marketing or dashboard screens.
-- Some large pages, especially parent dashboard and review, combine dense logic with markup, so redesign work may require careful component extraction without changing behavior.
+- Some large pages, especially review, combine dense logic with markup, so redesign work may require careful component extraction without changing behavior.
 
 ## Reflection
+
+### 2026-04-19 Supabase Migration Start
+
+- A major migration is now in progress to replace `NextAuth + MongoDB` app persistence with `Supabase Auth + Postgres + RLS`, while temporarily keeping `FixBoard` and reported-question workflows in MongoDB.
+- The migration order is now: local Supabase setup first, normalized SQL schema and RLS second, then auth cutover, then exams/questions, then attempts/review, then remaining user-owned data such as settings, vocab, and review reasons.
+- Public exams should only be readable by authenticated users, not anonymous visitors.
+- Teachers should fully manage only their own groups and memberships.
+- Multiple-choice questions should store answer keys by foreign key to `question_options`, while SPR questions should use a separate accepted-answers table.
+- Mongo-backed fix workflows require a stable SQL bridge, so migrated `tests`, `questions`, and `attempts` should preserve `legacy_mongo_id` values for cross-database lookups during transition.
+
+### 2026-04-20 Supabase Migration Pipeline
+
+- Pull requests that modify Supabase migration inputs should prove the full local migration set still applies cleanly from scratch.
+- Pushes to `main` that include those migration changes should automatically push the linked schema state to the production Supabase project.
+- Production migration automation should rely on the GitHub `production` environment with `DOTENV_PRIVATE_KEY_PRODUCTION`, `SUPABASE_ACCESS_TOKEN`, and `SUPABASE_DB_PASSWORD` rather than hardcoded credentials.
 
 ### 2026-04-13 v0.1 Reset
 
@@ -126,8 +139,7 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 
 ### 2026-04-13 Auth Family Complete
 
-- `app/auth/page.tsx`, `app/auth/forgot-password/page.tsx`, `app/auth/reset-password/page.tsx`, and `app/auth/parent/page.tsx` now share one workbook-style visual language through `components/auth/AuthWorkbookShell.tsx`.
-- The parent account flow preserves its two-step request-and-verify behavior while matching the redesigned student auth surfaces.
+- `app/auth/page.tsx`, `app/auth/forgot-password/page.tsx`, and `app/auth/reset-password/page.tsx` now share one workbook-style visual language through `components/auth/AuthWorkbookShell.tsx`.
 - Targeted lint passed across the updated auth files and shared branding components.
 
 ### 2026-04-13 Design Rule Added
@@ -149,7 +161,7 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 ### 2026-04-13 Phase 3 Hall of Fame
 
 - `app/hall-of-fame/page.tsx`, `components/StudentCard.tsx`, and `components/StudentCardSkeleton.tsx` now match the workbook system.
-- The remaining student-core routing question is `app/dashboard/page.tsx`, which currently re-exports the parent dashboard and needs a deliberate product decision before the student dashboard portion of Phase 3 can be considered fully complete.
+- The remaining student-core routing question is `app/dashboard/page.tsx`, which needed a deliberate product decision before the student dashboard portion of Phase 3 could be considered fully complete.
 
 ### 2026-04-13 Navigation And Color Correction
 
@@ -164,10 +176,9 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 
 ### 2026-04-13 Student Dashboard Restored
 
-- `app/dashboard/page.tsx` no longer re-exports the parent dashboard.
-- The dashboard route is now role-aware: students see a dedicated workbook dashboard, parents are redirected to `/parent/dashboard`, and admins are redirected to `/admin`.
+- `app/dashboard/page.tsx` now serves a dedicated student dashboard instead of re-exporting another role surface.
+- The dashboard route is now role-aware: students see a dedicated workbook dashboard, and admins are redirected to `/admin`.
 - The new student dashboard uses the existing user stats, results, and leaderboard APIs through `dashboardService`, and the shared dashboard panels were restyled into the workbook system.
-- `/api/dashboard` still re-exports the parent dashboard API route, but it is currently unused by the app and was intentionally left untouched in this pass.
 
 ### 2026-04-13 Phase 4 Start
 
@@ -189,7 +200,7 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 
 ### 2026-04-13 Secondary Surface Pass
 
-- `app/settings/page.tsx`, `app/admin/page.tsx`, and `app/parent/dashboard/page.tsx` now use workbook-style page shells and major panel wrappers.
+- `app/settings/page.tsx` and `app/admin/page.tsx` now use workbook-style page shells and major panel wrappers.
 - The admin form family was also migrated through `components/admin/CreateTestForm.tsx`, `components/admin/CreateStudentForm.tsx`, and `components/admin/CreateQuestionForm.tsx`.
 
 ### 2026-04-13 Library Control Rule
@@ -229,7 +240,26 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 
 - `components/InitialTabBootReady.tsx` now supports a `when` gate and clears the initial-tab boot flag only after two animation frames, so the pretty loader drops only after the ready screen has actually painted.
 - Hydration-sensitive routes now gate boot completion correctly: `app/vocab/page.tsx` waits for board hydration, and `app/fix/page.tsx` waits for fix-board hydration instead of clearing boot as soon as the shell mounts.
-- Non-happy-path settled states now also clear boot so the app does not get stuck on the pretty loader when a page resolves into an empty or unauthorized screen: `app/settings/page.tsx`, `app/parent/dashboard/page.tsx`, and `components/TestEngine.tsx` now mark boot ready in those resolved fallback states too.
+- Non-happy-path settled states now also clear boot so the app does not get stuck on the pretty loader when a page resolves into an empty or unauthorized screen: `app/settings/page.tsx` and `components/TestEngine.tsx` now mark boot ready in those resolved fallback states too.
+
+### 2026-04-19 Review Error Log
+
+- `app/review/page.tsx` now includes a sibling `Error log` screen next to `Results`, so review can switch between per-test report cards and a single Notion-inspired mistake table.
+- The new `components/review/ReviewErrorLog.tsx` flattens review history into only wrong and skipped questions, supports search and wrong/skipped filtering, and lets students assign a single `Reason` category inline.
+- `Result.answers` now supports a persisted `errorReason`, exposed through `/api/results` and updated through `/api/results/reason`, so reason labels survive reloads instead of living only in client state.
+- Review reasons now live in the user record as a synced catalog with label, color, and order metadata, served by `/api/user/review-reasons` and used by the error-log dropdown and customization UI.
+
+### 2026-04-19 Review Error Log Performance Pass
+
+- The error log now reads from a dedicated paginated endpoint at `/api/results/error-log` instead of flattening the full review history in the client.
+- The error-log screen now loads only 20 latest matching questions at a time and appends the next 20 through an explicit `Show more` action.
+- Review route warmup no longer preloads the full review-history payload, and `useReviewPageController` skips full-results hydration entirely while the error-log view is active so route progress stays responsive.
+
+### 2026-04-19 Review Reason Persistence Tightening
+
+- Answer-reason writes now use `updateOne` and only touch the single matched `answers.$.errorReason` field, unsetting it fully when a reason is removed instead of reading back the whole result document.
+- User reason-catalog saves now use `updateOne` too, and the default catalog is no longer stored on every user document; if a user is still on defaults, the field is omitted and reconstructed on read.
+- `Result` now has a compound index on `{ userId, isSectional, createdAt }` to better support paginated error-log reads.
 
 ### 2026-04-17 Vocab Revision Upgrade Start
 
@@ -240,9 +270,8 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 ### 2026-04-18 Startup Data Warmup
 
 - The root layout now mounts a hidden startup preloader that begins warming authenticated app data as soon as profile-gated routes open.
-- The preload pass fills the same session-storage keys already used by the student dashboard, full-length library, sectional library, review flow, and parent dashboard so those screens can render from warm cache immediately after the initial loading phase.
+- The preload pass fills the same session-storage keys already used by the student dashboard, full-length library, sectional library, and review flow so those screens can render from warm cache immediately after the initial loading phase.
 - The sectional controller now reuses the shared cached result history instead of always doing a fresh `/api/results` fetch on first open.
-- The parent dashboard now shares a dedicated `parent:dashboard` cache entry and also reuses the warmed leaderboard cache instead of always cold-loading both panels.
 
 ### 2026-04-14 Dracula Testing Room Theme
 
@@ -294,3 +323,15 @@ Ship `v0.1` as a whole-product redesign of the Ronan SAT app so the entire proje
 - Student accounts now need a one-time welcome setup with an immutable `username` and `birthDate` before entering the main app.
 - Username availability should stay efficient by querying a sparse unique MongoDB index on the normalized lowercase `username` field rather than scanning names or using regex lookups.
 - Settings should show student identity details as locked read-only values, not as editable profile fields.
+
+### 2026-04-19 Parent Feature Removal
+
+- Parent auth, parent dashboard, verification-code routes, and the related parent-only data model fields were removed from the product.
+- Shared auth, session, and profile-gate code now normalize any legacy non-admin account into the student flow so old parent records no longer surface a separate product path.
+- Contributor-facing docs now describe the current two-role system: `STUDENT` and `ADMIN`.
+
+### 2026-04-19 AI Feature Removal
+
+- The Gemini-backed question assistant was removed end-to-end, including `/api/chat`, the chat controller/service/model stack, the review chatbot component/hook, and the markdown renderer that existed only for AI responses.
+- Review still keeps normal stored question explanations through the existing explanation fields and routes; only the interactive AI follow-up layer was removed.
+- Contributor docs and dependency metadata now no longer advertise `GEMINI_API_KEY` or Gemini as part of the required app setup.

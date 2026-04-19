@@ -1,14 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import axios from "axios";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth/client";
 import { useEffect, useState } from "react";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import AuthWorkbookShell from "@/components/auth/AuthWorkbookShell";
 import Loading from "@/components/Loading";
 import { getPostAuthRedirectPath } from "@/lib/getPostAuthRedirectPath";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type MessageTone = "success" | "error" | "info";
 
@@ -17,7 +17,6 @@ export default function ForgotPasswordPage() {
   const { data: session, status } = useSession();
 
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<MessageTone>("info");
   const [isSending, setIsSending] = useState(false);
@@ -41,46 +40,40 @@ export default function ForgotPasswordPage() {
 
     setIsSending(true);
     setMessageTone("info");
-    setMessage("Sending your verification code...");
+      setMessage("Sending your verification code...");
 
     try {
-      await axios.post("/api/auth/forgot-password", { email });
+      const supabase = createSupabaseBrowserClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
       setMessageTone("success");
-      setMessage("A 6-digit code has been sent to your email.");
+      setMessage("A password reset link has been sent to your email.");
     } catch (error: unknown) {
       setMessageTone("error");
-      setMessage(
-        axios.isAxiosError(error)
-          ? error.response?.data?.message || "Unable to send the verification code."
-          : "Unable to send the verification code."
-      );
+      setMessage(error instanceof Error ? error.message : "Unable to send the reset email.");
     } finally {
       setIsSending(false);
     }
-  };
-
-  const handleVerifyCode = () => {
-    if (!code || code.length !== 6) {
-      setMessageTone("error");
-      setMessage("Enter a valid 6-digit code.");
-      return;
-    }
-
-    router.push(`/auth/reset-password?email=${encodeURIComponent(email)}&code=${code}`);
   };
 
   return (
     <AuthWorkbookShell
       badge="Password Reset"
       title="Recover your study flow without losing momentum."
-      description="Request a short verification code, then move straight into a secure password reset."
+      description="Request a secure password reset link, then finish the reset directly from your email."
       accentClass="bg-accent-3"
       notes={[
-        "Codes are short-lived and meant for fast recovery.",
+        "Reset links are short-lived and meant for fast recovery.",
         "Use the same email you used to create your Ronan SAT account.",
       ]}
-      cardTitle="Send your code"
-      cardDescription="We will email a 6-digit verification code, then you can continue to the reset screen."
+      cardTitle="Send your reset link"
+      cardDescription="We will email a secure reset link you can open to choose a new password."
       backHref="/auth"
       backLabel="Back to sign in"
     >
@@ -124,24 +117,6 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
-        <div>
-          <label className="mb-2 block text-sm font-bold uppercase tracking-[0.16em] text-ink-fg">
-            Verification Code
-          </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            maxLength={6}
-            value={code}
-            onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="123456"
-            className="workbook-input"
-          />
-        </div>
-
-        <button onClick={handleVerifyCode} className="workbook-button w-full" type="button">
-          Continue to Reset
-        </button>
       </div>
     </AuthWorkbookShell>
   );
