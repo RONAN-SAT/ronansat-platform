@@ -22,19 +22,21 @@ import { SkillPerformanceCard } from "@/components/review/SkillPerformanceCard";
 type ReviewReportProps = {
   testType: "full" | "sectional";
   activeTest?: ReviewResult;
-  onSelectAnswer: (payload: { answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
+  onSelectAnswer: (payload: { resultId: string; answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
 };
 
 function AnswerGrid({
   answers,
   startIndex,
+  resultId,
   testId,
   onSelectAnswer,
 }: {
   answers: ReviewAnswer[];
   startIndex: number;
+  resultId: string;
   testId?: string;
-  onSelectAnswer: (payload: { answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
+  onSelectAnswer: (payload: { resultId: string; answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
 }) {
   if (!answers || answers.length === 0) {
     return <p className="mt-2 text-sm italic text-ink-fg/60">No data for this module.</p>;
@@ -56,7 +58,7 @@ function AnswerGrid({
           <button
             key={`${answer.questionId?._id || index}-${startIndex + index}`}
             title={`Q${startIndex + index + 1} - ${isOmitted ? "Omitted" : answer.isCorrect ? "Correct" : "Incorrect"}`}
-            onClick={() => onSelectAnswer({ answer, questionNumber: startIndex + index + 1, testId })}
+            onClick={() => onSelectAnswer({ resultId, answer, questionNumber: startIndex + index + 1, testId })}
             className={`flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black transition-all duration-150 brutal-shadow-sm workbook-press ${className}`}
           >
             {startIndex + index + 1}
@@ -110,7 +112,7 @@ function FullLengthReport({
   onSelectAnswer,
 }: {
   activeTest: ReviewResult;
-  onSelectAnswer: (payload: { answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
+  onSelectAnswer: (payload: { resultId: string; answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
 }) {
   const { rwModule1, rwModule2, mathModule1, mathModule2 } = groupFullLengthAnswers(activeTest);
 
@@ -144,10 +146,10 @@ function FullLengthReport({
                 </div>
               </div>
               <div className="mb-1 h-px bg-ink-fg/15" />
-              <AnswerGrid answers={answers} startIndex={startIndex} testId={activeTest.testId?._id} onSelectAnswer={onSelectAnswer} />
-            </div>
-          );
-        })}
+               <AnswerGrid answers={answers} startIndex={startIndex} resultId={activeTest._id} testId={activeTest.testId?._id} onSelectAnswer={onSelectAnswer} />
+             </div>
+           );
+         })}
         </div>
       </div>
 
@@ -179,10 +181,10 @@ function FullLengthReport({
                 </div>
               </div>
               <div className="mb-1 h-px bg-ink-fg/15" />
-              <AnswerGrid answers={answers} startIndex={startIndex} testId={activeTest.testId?._id} onSelectAnswer={onSelectAnswer} />
-            </div>
-          );
-        })}
+               <AnswerGrid answers={answers} startIndex={startIndex} resultId={activeTest._id} testId={activeTest.testId?._id} onSelectAnswer={onSelectAnswer} />
+             </div>
+           );
+         })}
         </div>
       </div>
     </div>
@@ -194,7 +196,7 @@ function SectionalReport({
   onSelectAnswer,
 }: {
   activeTest: ReviewResult;
-  onSelectAnswer: (payload: { answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
+  onSelectAnswer: (payload: { resultId: string; answer: ReviewAnswer; questionNumber: number; testId?: string }) => void;
 }) {
   const colors = getSectionalColors(activeTest.sectionalSubject || "");
   const answers = activeTest.answers || [];
@@ -220,7 +222,7 @@ function SectionalReport({
           </div>
         </div>
         <div className="mb-1 h-px bg-ink-fg/15" />
-        <AnswerGrid answers={answers} startIndex={0} testId={activeTest.testId?._id} onSelectAnswer={onSelectAnswer} />
+        <AnswerGrid answers={answers} startIndex={0} resultId={activeTest._id} testId={activeTest.testId?._id} onSelectAnswer={onSelectAnswer} />
       </div>
     </div>
   );
@@ -234,6 +236,18 @@ export function ReviewReport({ testType, activeTest, onSelectAnswer }: ReviewRep
           <FileText className="mx-auto mb-3 h-10 w-10 opacity-40" />
           <p className="font-display text-3xl font-black uppercase tracking-tight">No test results found</p>
           <p className="mt-2 text-sm leading-6">Complete a test to see your grid report here.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeTest.detailsLoaded) {
+    return (
+      <div className="mx-auto max-w-5xl">
+        <div className="workbook-panel p-10 text-center">
+          <FileText className="mx-auto mb-3 h-10 w-10 opacity-40" />
+          <p className="font-display text-3xl font-black uppercase tracking-tight">Loading selected result</p>
+          <p className="mt-2 text-sm leading-6">Pulling the answer summary for this run now.</p>
         </div>
       </div>
     );

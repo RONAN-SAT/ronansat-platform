@@ -1,7 +1,7 @@
 "use client";
 
-import { useDeferredValue, useEffect, useState, useTransition } from "react";
-import { AlertCircle, GripVertical, Plus, Search, X } from "lucide-react";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, GripVertical, Plus, Search, X } from "lucide-react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,6 +24,15 @@ const CUSTOMIZE_REASON_VALUE = "__customize_reason__";
 const UNSET_REASON_VALUE = "__unset_reason__";
 const FALLBACK_REASON_COLOR = "#F4F1EA";
 const ERROR_LOG_PAGE_SIZE = 20;
+
+type SortColumn = "timestamp" | "questionNumber" | "testTitle" | "domain" | "skill" | "difficulty" | "reason";
+type SortDirection = "asc" | "desc";
+
+const DIFFICULTY_SORT_ORDER: Record<string, number> = {
+  easy: 0,
+  medium: 1,
+  hard: 2,
+};
 
 function getDifficultyTone(difficulty: string) {
   switch (difficulty.toLowerCase()) {
@@ -73,6 +82,41 @@ function moveReasonItem(items: ReviewReasonItem[], draggedId: string, targetId: 
   return nextItems.map((item, index) => ({ ...item, order: index }));
 }
 
+function compareTextValues(left?: string, right?: string) {
+  return (left ?? "").localeCompare(right ?? "", undefined, { sensitivity: "base" });
+}
+
+function compareErrorLogRows(left: ReviewErrorLogEntry, right: ReviewErrorLogEntry, column: SortColumn) {
+  switch (column) {
+    case "timestamp": {
+      const leftTimestamp = left.timestamp ? new Date(left.timestamp).getTime() : Number.NEGATIVE_INFINITY;
+      const rightTimestamp = right.timestamp ? new Date(right.timestamp).getTime() : Number.NEGATIVE_INFINITY;
+      return leftTimestamp - rightTimestamp;
+    }
+    case "difficulty": {
+      const leftDifficulty = DIFFICULTY_SORT_ORDER[left.difficulty.toLowerCase()] ?? Number.MAX_SAFE_INTEGER;
+      const rightDifficulty = DIFFICULTY_SORT_ORDER[right.difficulty.toLowerCase()] ?? Number.MAX_SAFE_INTEGER;
+      if (leftDifficulty !== rightDifficulty) {
+        return leftDifficulty - rightDifficulty;
+      }
+
+      return compareTextValues(left.difficulty, right.difficulty);
+    }
+    case "questionNumber":
+      return left.questionNumber - right.questionNumber;
+    case "testTitle":
+      return compareTextValues(left.testTitle, right.testTitle);
+    case "domain":
+      return compareTextValues(left.domain, right.domain);
+    case "skill":
+      return compareTextValues(left.skill, right.skill);
+    case "reason":
+      return compareTextValues(left.reason || "No reason yet", right.reason || "No reason yet");
+    default:
+      return 0;
+  }
+}
+
 export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: ReviewErrorLogProps) {
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -90,8 +134,26 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
   const [savingReasonCatalog, setSavingReasonCatalog] = useState(false);
   const [draftReasonCatalog, setDraftReasonCatalog] = useState<ReviewReasonItem[]>([]);
   const [draftSelectedReasonId, setDraftSelectedReasonId] = useState<string | null>(null);
+  const [sortColumn, setSortColumn] = useState<SortColumn>("timestamp");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [, startUiTransition] = useTransition();
   const selectedReason = draftSelectedReasonId ? draftReasonCatalog.find((item) => item.id === draftSelectedReasonId) ?? null : null;
+
+  const sortedRows = useMemo(() => {
+    const direction = sortDirection === "asc" ? 1 : -1;
+
+    return rows
+      .map((row, index) => ({ row, index }))
+      .sort((left, right) => {
+        const comparison = compareErrorLogRows(left.row, right.row, sortColumn);
+        if (comparison !== 0) {
+          return comparison * direction;
+        }
+
+        return left.index - right.index;
+      })
+      .map(({ row }) => row);
+  }, [rows, sortColumn, sortDirection]);
 
   useEffect(() => {
     let cancelled = false;
@@ -262,6 +324,32 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
     }
   };
 
+  const handleSortChange = (column: SortColumn) => {
+    if (column === sortColumn) {
+      setSortDirection((currentDirection) => (currentDirection === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortColumn(column);
+    setSortDirection(column === "timestamp" ? "desc" : "asc");
+  };
+
+  const getHeaderAriaSort = (column: SortColumn): "ascending" | "descending" | "none" => {
+    if (column !== sortColumn) {
+      return "none";
+    }
+
+    return sortDirection === "asc" ? "ascending" : "descending";
+  };
+
+  const renderSortIcon = (column: SortColumn) => {
+    if (column !== sortColumn) {
+      return <ArrowUpDown className="h-3.5 w-3.5" aria-hidden="true" />;
+    }
+
+    return sortDirection === "asc" ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />;
+  };
+
   const handleDraftAddReason = () => {
     const baseLabel = "New Reason";
     let nextLabel = baseLabel;
@@ -376,17 +464,82 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
 
       <Table>
         <TableCaption className="pb-2">
-          {loadingRows ? "Loading the latest 20 mistakes..." : `${rows.length} entries currently loaded in this error log view.`}
+          {loadingRows
+            ? "Loading the latest 20 mistakes..."
+            : `${sortedRows.length} entries currently loaded, sorted by ${sortColumn === "questionNumber" ? "question number" : sortColumn} (${sortDirection}).`}
         </TableCaption>
         <TableHeader className="sticky top-0 z-10">
           <TableRow className="hover:bg-paper-bg">
-            <TableHead className="w-[11.75rem] min-w-[11.75rem]">Time</TableHead>
-            <TableHead className="w-[8.25rem]">ID</TableHead>
-            <TableHead className="w-[12rem] min-w-[12rem]">Test</TableHead>
-            <TableHead>Domain</TableHead>
-            <TableHead>Skill</TableHead>
-            <TableHead>Difficulty</TableHead>
-            <TableHead className="min-w-[14rem]">Reason</TableHead>
+            <TableHead className="w-[11.75rem] min-w-[11.75rem]" aria-sort={getHeaderAriaSort("timestamp")}>
+              <button
+                type="button"
+                onClick={() => handleSortChange("timestamp")}
+                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+              >
+                <span>Time</span>
+                {renderSortIcon("timestamp")}
+              </button>
+            </TableHead>
+            <TableHead className="w-[8.25rem]" aria-sort={getHeaderAriaSort("questionNumber")}>
+              <button
+                type="button"
+                onClick={() => handleSortChange("questionNumber")}
+                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+              >
+                <span>Question</span>
+                {renderSortIcon("questionNumber")}
+              </button>
+            </TableHead>
+            <TableHead className="w-[12rem] min-w-[12rem]" aria-sort={getHeaderAriaSort("testTitle")}>
+              <button
+                type="button"
+                onClick={() => handleSortChange("testTitle")}
+                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+              >
+                <span>Test</span>
+                {renderSortIcon("testTitle")}
+              </button>
+            </TableHead>
+            <TableHead aria-sort={getHeaderAriaSort("domain")}>
+              <button
+                type="button"
+                onClick={() => handleSortChange("domain")}
+                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+              >
+                <span>Domain</span>
+                {renderSortIcon("domain")}
+              </button>
+            </TableHead>
+            <TableHead aria-sort={getHeaderAriaSort("skill")}>
+              <button
+                type="button"
+                onClick={() => handleSortChange("skill")}
+                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+              >
+                <span>Skill</span>
+                {renderSortIcon("skill")}
+              </button>
+            </TableHead>
+            <TableHead aria-sort={getHeaderAriaSort("difficulty")}>
+              <button
+                type="button"
+                onClick={() => handleSortChange("difficulty")}
+                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+              >
+                <span>Difficulty</span>
+                {renderSortIcon("difficulty")}
+              </button>
+            </TableHead>
+            <TableHead className="min-w-[14rem]" aria-sort={getHeaderAriaSort("reason")}>
+              <button
+                type="button"
+                onClick={() => handleSortChange("reason")}
+                className="flex w-full items-center gap-2 text-left text-[11px] font-black uppercase tracking-[0.16em] text-ink-fg/75 workbook-press"
+              >
+                <span>Reason</span>
+                {renderSortIcon("reason")}
+              </button>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -403,7 +556,7 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
               </TableCell>
             </TableRow>
           ) : (
-            rows.map((row) => (
+            sortedRows.map((row) => (
               <TableRow
                 key={row.key}
                 tabIndex={0}
@@ -419,8 +572,8 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                 <TableCell>
                   <span className="text-sm font-semibold text-ink-fg">{formatErrorLogTimestamp(row.timestamp).dateTimeLabel}</span>
                 </TableCell>
-                <TableCell className="max-w-[8.25rem] truncate font-mono text-[13px] font-semibold text-ink-fg/75" title={row.questionId}>
-                  {row.questionId}
+                <TableCell>
+                  <span className="text-sm font-semibold text-ink-fg">{row.questionNumber}</span>
                 </TableCell>
                 <TableCell>
                   <span className="block min-w-0 max-w-[12rem] truncate font-semibold text-ink-fg" title={row.testTitle}>
@@ -560,7 +713,6 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                         <div className="mt-4 text-xs font-black uppercase tracking-[0.16em] text-ink-fg">Colour presets</div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {REVIEW_REASON_COLOR_PRESETS.map((preset) => {
-                            const textColor = getReadableTextColor(preset);
                             const isActive = selectedReason.color === preset;
                             return (
                               <button
@@ -568,13 +720,13 @@ export function ReviewErrorLog({ testType, onViewQuestion, onUpdateReason }: Rev
                                 type="button"
                                 onClick={() => handleDraftReasonColorChange(selectedReason.id, preset)}
                                 className={[
-                                  "rounded-full border-2 border-ink-fg px-3 py-1.5 text-xs font-black tracking-[0.12em]",
+                                  "h-6 w-12 rounded-full border-2 border-ink-fg transition-transform workbook-press",
                                   isActive ? "ring-2 ring-ink-fg ring-offset-2 ring-offset-paper-bg" : "",
                                 ].join(" ")}
-                                style={{ backgroundColor: preset, color: textColor }}
-                              >
-                                {selectedReason.label}
-                              </button>
+                                style={{ backgroundColor: preset }}
+                                aria-label={`Choose colour ${preset}`}
+                                aria-pressed={isActive}
+                              />
                             );
                           })}
                         </div>

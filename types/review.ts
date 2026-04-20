@@ -22,6 +22,7 @@ export type ReviewAnswer = {
   userAnswer?: string;
   isCorrect: boolean;
   errorReason?: string;
+  questionLoaded?: boolean;
 };
 
 export type ReviewTestReference = {
@@ -42,6 +43,7 @@ export type ReviewResult = {
   sectionalSubject?: string;
   sectionalModule?: number;
   answers: ReviewAnswer[];
+  detailsLoaded?: boolean;
 };
 
 export type ReviewErrorLogStatus = "wrong" | "omitted";

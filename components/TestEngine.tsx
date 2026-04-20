@@ -9,6 +9,16 @@ import SimpleLoading from "@/components/SimpleLoading";
 import TestFooter from "@/components/test/TestFooter";
 import TestHeader from "@/components/test/TestHeader";
 import TestReviewPage from "@/components/test/TestReviewPage";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogActionButton,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useTestingRoomTheme } from "@/hooks/useTestingRoomTheme";
 import { getTestingRoomThemePreset } from "@/lib/testingRoomTheme";
 import { useResizableDivider } from "@/hooks/useResizableDivider";
@@ -34,7 +44,11 @@ export default function TestEngine({ testId }: { testId: string }) {
     currentStage,
     currentStageIndex,
     isSubmitting,
+    isDiscardDialogOpen,
+    setIsDiscardDialogOpen,
     availableModules,
+    answeredCurrentModuleQuestions,
+    minimumRequiredCurrentModuleAnswers,
     handleAnswerSelect,
     toggleFlag,
     handleNext,
@@ -46,6 +60,7 @@ export default function TestEngine({ testId }: { testId: string }) {
   const [isReviewPageOpen, setIsReviewPageOpen] = useState(false);
 
   const { leftWidth, isDragging, containerRef, handleDividerMouseDown } = useResizableDivider(50);
+  const discardExitHref = mode === "sectional" ? "/sectional" : "/full-length";
 
   if (loading) {
     return <SimpleLoading />;
@@ -77,16 +92,42 @@ export default function TestEngine({ testId }: { testId: string }) {
   const buttonText = mode === "sectional" ? "Submit Module" : isLastModule ? "Submit Test" : "Next Module";
   const confirmDescription =
     mode === "sectional"
-      ? "Are you sure you want to grade this module now?"
+      ? `You must answer at least ${minimumRequiredCurrentModuleAnswers} questions before submitting this module.`
       : isLastModule
-        ? "Are you sure you want to submit the entire test?"
-        : "Are you sure you want to end this section?";
+        ? `You must answer at least ${minimumRequiredCurrentModuleAnswers} questions in this module before submitting the test.`
+        : `You must answer at least ${minimumRequiredCurrentModuleAnswers} questions in this module before moving on.`;
 
   return (
     <div
       className={`relative flex min-h-screen flex-col overflow-hidden ${themePreset.shell.rootClass}`}
     >
       <InitialTabBootReady />
+      <AlertDialog open={isDiscardDialogOpen}>
+        <AlertDialogContent className={themePreset.dialog.contentClass}>
+          <AlertDialogHeader>
+            <div className={themePreset.dialog.iconDangerClass}>Time&apos;s up</div>
+            <AlertDialogTitle className={themePreset.dialog.titleClass}>Result Discarded</AlertDialogTitle>
+            <AlertDialogDescription className={themePreset.dialog.descriptionClass}>
+              You answered {answeredCurrentModuleQuestions} of {currentModuleQuestions.length} questions in this module. You must complete at least {minimumRequiredCurrentModuleAnswers} questions to save anything, so this attempt was discarded.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogAction asChild>
+              <AlertDialogActionButton
+                className={themePreset.dialog.dangerButtonClass}
+                onClick={() => {
+                  setIsDiscardDialogOpen(false);
+                  router.push(discardExitHref);
+                }}
+              >
+                Return to Library
+              </AlertDialogActionButton>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <TestHeader
         theme={testingRoomTheme}
         sectionName={`${currentStage.section} - Module ${currentStage.module}`}
@@ -133,6 +174,8 @@ export default function TestEngine({ testId }: { testId: string }) {
             answers={answers}
             flagged={flagged}
             submitLabel={buttonText}
+            minimumRequiredAnswers={minimumRequiredCurrentModuleAnswers}
+            answeredCount={answeredCurrentModuleQuestions}
             onJump={(index) => {
               handleJump(index);
               setIsReviewPageOpen(false);

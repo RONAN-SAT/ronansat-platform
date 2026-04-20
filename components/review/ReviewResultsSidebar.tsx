@@ -8,7 +8,6 @@ import { getReviewScoreLabel } from "@/components/review/reviewPage.utils";
 import type { ReviewResult } from "@/types/review";
 
 type ReviewResultsSidebarProps = {
-  refreshing: boolean;
   testType: "full" | "sectional";
   activeTestId: string | null;
   filteredResults: ReviewResult[];
@@ -17,7 +16,6 @@ type ReviewResultsSidebarProps = {
 };
 
 export function ReviewResultsSidebar({
-  refreshing,
   testType,
   activeTestId,
   filteredResults,
@@ -60,8 +58,6 @@ export function ReviewResultsSidebar({
             Sectional
           </button>
         </div>
-
-        {refreshing ? <div className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70">Syncing review...</div> : null}
       </div>
 
       <div className="bg-dot-pattern flex-1 space-y-3 overflow-y-auto px-3 py-4 lg:pl-2 lg:pr-3">

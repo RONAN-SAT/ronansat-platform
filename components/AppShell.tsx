@@ -14,7 +14,7 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-const SHELL_HIDDEN_PREFIXES = ["/auth", "/test/"];
+const SHELL_HIDDEN_PREFIXES = ["/auth", "/test/", "/review/question"];
 const WELCOME_ROUTE = "/welcome";
 const SHELL_HIDDEN_ROUTES = new Set(["/", WELCOME_ROUTE]);
 

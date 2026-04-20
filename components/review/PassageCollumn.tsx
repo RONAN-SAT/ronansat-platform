@@ -14,7 +14,7 @@ export default function PassageColumn({ q }: PassageColumnProps) {
   }
 
   return (
-    <div className="h-full w-1/2 overflow-y-auto border-r-4 border-ink-fg bg-surface-white">
+    <div className="h-full min-h-0 w-1/2 self-stretch overflow-y-auto border-r-4 border-ink-fg bg-surface-white">
       <div className="p-8 lg:p-10">
         <QuestionExtraBlock
           extra={q.extra}

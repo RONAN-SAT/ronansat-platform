@@ -40,6 +40,7 @@ export type UserResultSummary = {
   createdAt?: string;
   date?: string;
   updatedAt?: string;
+  detailsLoaded?: boolean;
 };
 
 export type CachedTestsPayload = {

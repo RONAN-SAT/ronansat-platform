@@ -17,6 +17,9 @@ import { renderHtmlLatexContent } from "@/utils/renderContent";
 interface ReviewPopupProps {
   ans: ReviewAnswer;
   onClose: () => void;
+  loadingQuestion: boolean;
+  variant?: "modal" | "page";
+  closeLabel?: string;
   expandedExplanation: string | undefined;
   loadingExplanation: boolean;
   onExpandExplanation: (qId: string) => void;
@@ -33,6 +36,9 @@ interface ReviewPopupProps {
 export default function ReviewPopup({
   ans,
   onClose,
+  loadingQuestion,
+  variant = "modal",
+  closeLabel = "Close",
   expandedExplanation,
   loadingExplanation,
   onExpandExplanation,
@@ -44,14 +50,19 @@ export default function ReviewPopup({
   const [isExplanationVisible, setIsExplanationVisible] = useState(false);
   const [annotations, setAnnotations] = useState<TextAnnotation[]>([]);
 
-  if (!q) {
+  const isPageVariant = variant === "page";
+
+  if (!q || (loadingQuestion && !ans.questionLoaded)) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink-fg/20 p-4">
-        <div className="workbook-modal-card max-w-sm p-8 text-center text-ink-fg">
+      <div className={isPageVariant ? "flex h-screen items-center justify-center bg-paper-bg p-6 text-center text-ink-fg" : "fixed inset-0 z-[100] flex items-center justify-center bg-ink-fg/20 p-4"}>
+        <div className={isPageVariant ? "mx-auto max-w-sm" : "workbook-modal-card max-w-sm p-8 text-center text-ink-fg"}>
           <AlertCircle className="mx-auto mb-3 h-10 w-10 text-accent-3" />
-          <p className="font-display text-3xl font-black uppercase tracking-tight">Question data is missing.</p>
+          <p className="font-display text-3xl font-black uppercase tracking-tight">
+            {!q ? "Question data is missing." : "Loading question."}
+          </p>
+          {q ? <p className="mt-2 text-sm text-ink-fg/70">Fetching the full prompt, answers, and passage now.</p> : null}
           <button onClick={onClose} className="workbook-button mt-5" type="button">
-            Close
+            {closeLabel}
           </button>
         </div>
       </div>
@@ -71,7 +82,7 @@ export default function ReviewPopup({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-paper-bg">
+    <div className={isPageVariant ? "flex h-screen flex-col overflow-hidden bg-paper-bg" : "fixed inset-0 z-[100] flex flex-col bg-paper-bg"}>
       <DesmosCalculator isOpen={showCalculator} onClose={() => setShowCalculator(false)} />
 
       <header className="flex min-h-20 shrink-0 items-center justify-between gap-4 border-b-4 border-ink-fg bg-surface-white px-4 py-3 sm:px-6">
@@ -118,22 +129,22 @@ export default function ReviewPopup({
           >
             <span className="flex items-center gap-1.5">
               <X className="h-4 w-4" />
-              Close
-            </span>
-          </button>
-        </div>
+                {closeLabel}
+              </span>
+            </button>
+          </div>
       </header>
 
       <SelectableTextPanel
         annotations={annotations}
         onChange={setAnnotations}
         sourceQuestionId={q._id}
-        className="relative flex flex-1 overflow-hidden"
+        className={`relative flex min-h-0 flex-1 overflow-hidden ${isPageVariant ? "bg-paper-bg" : ""}`}
       >
-        <div className="flex h-full flex-1 overflow-hidden">
+        <div className="flex h-full min-h-0 flex-1 items-stretch overflow-hidden">
           <PassageColumn q={q} />
 
-          <div className={`${q.passage ? "w-1/2" : "mx-auto w-full max-w-4xl"} h-full overflow-y-auto bg-paper-bg`}>
+          <div className={`${q.passage ? "w-1/2" : "mx-auto w-full max-w-4xl"} h-full min-h-0 overflow-y-auto bg-paper-bg`}>
             <div className="flex flex-col gap-5 p-6 lg:p-8">
               {!q.passage ? (
                 <QuestionExtraBlock

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import ReviewPageSkeleton from "@/components/ReviewPageSkeleton";
@@ -12,23 +12,18 @@ import { ReviewResultsSidebar } from "@/components/review/ReviewResultsSidebar";
 import { useReviewPageController } from "@/components/review/useReviewPageController";
 
 function ReviewContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const activeView = searchParams.get("view") === "error-log" ? "error-log" : "results";
   const {
     status,
     loading,
-    refreshing,
     testType,
     activeTestId,
-    selectedAnswer,
-    expandedExplanations,
-    loadingExplanations,
     filteredResults,
     activeTest,
     setTestType,
     setActiveTestId,
-    setSelectedAnswer,
-    handleExpandExplanation,
     handleUpdateAnswerReason,
   } = useReviewPageController({ activeView });
 
@@ -41,7 +36,6 @@ function ReviewContent() {
       <InitialTabBootReady />
       {activeView === "results" ? (
         <ReviewResultsSidebar
-          refreshing={refreshing}
           testType={testType}
           activeTestId={activeTestId}
           filteredResults={filteredResults}
@@ -66,40 +60,51 @@ function ReviewContent() {
         </section>
 
         {activeView === "results" ? (
-          <ReviewReport testType={testType} activeTest={activeTest} onSelectAnswer={setSelectedAnswer} />
+          <ReviewReport
+            testType={testType}
+            activeTest={activeTest}
+            onSelectAnswer={({ resultId, answer, questionNumber, testId }) => {
+              const questionId = answer.questionId?._id;
+              if (!questionId) {
+                return;
+              }
+
+              const params = new URLSearchParams({
+                source: "results",
+                mode: testType,
+                resultId,
+                questionId,
+                questionNumber: String(questionNumber),
+              });
+
+              if (testId) {
+                params.set("testId", testId);
+              }
+
+              router.push(`/review/question?${params.toString()}`);
+            }}
+          />
         ) : (
           <ReviewErrorLog
             testType={testType}
             onUpdateReason={handleUpdateAnswerReason}
             onViewQuestion={({ resultId, testId, answer, questionNumber }) => {
-              setActiveTestId(resultId);
-              setSelectedAnswer({ answer, questionNumber, testId });
+              const params = new URLSearchParams();
+              params.set("source", "error-log");
+              params.set("resultId", resultId);
+              params.set("questionId", answer.questionId?._id || "");
+              params.set("questionNumber", String(questionNumber));
+              params.set("mode", testType);
+
+              if (testId) {
+                params.set("testId", testId);
+              }
+
+              router.push(`/review/question?${params.toString()}`);
             }}
           />
         )}
       </main>
-
-      {selectedAnswer ? (
-        <ReviewPopup
-          ans={selectedAnswer.answer}
-          onClose={() => setSelectedAnswer(null)}
-          expandedExplanation={expandedExplanations[selectedAnswer.answer.questionId?._id || ""]}
-          loadingExplanation={!!loadingExplanations[selectedAnswer.answer.questionId?._id || ""]}
-          onExpandExplanation={handleExpandExplanation}
-          reportContext={
-            selectedAnswer.testId && selectedAnswer.answer.questionId?._id && selectedAnswer.answer.questionId.section && selectedAnswer.answer.questionId.module
-              ? {
-                  testId: selectedAnswer.testId,
-                  questionId: selectedAnswer.answer.questionId._id,
-                  section: selectedAnswer.answer.questionId.section,
-                  module: selectedAnswer.answer.questionId.module,
-                  questionNumber: selectedAnswer.questionNumber,
-                  source: "review",
-                }
-              : undefined
-          }
-        />
-      ) : null}
     </div>
   );
 }

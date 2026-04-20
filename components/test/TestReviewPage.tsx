@@ -12,6 +12,8 @@ interface TestReviewPageProps {
   answers: Record<string, string>;
   flagged: Record<string, boolean>;
   submitLabel: string;
+  minimumRequiredAnswers: number;
+  answeredCount: number;
   onJump: (index: number) => void;
   onReturn: () => void;
   onSubmit: () => void;
@@ -25,13 +27,14 @@ export default function TestReviewPage({
   answers,
   flagged,
   submitLabel,
+  minimumRequiredAnswers,
+  answeredCount,
   onJump,
   onReturn,
   onSubmit,
 }: TestReviewPageProps) {
   const themePreset = getTestingRoomThemePreset(theme);
   const reviewTheme = themePreset.review;
-  const answeredCount = questions.filter((question) => !!answers[question._id]).length;
   const flaggedCount = questions.filter((question) => !!flagged[question._id]).length;
   const unansweredCount = questions.length - answeredCount;
 
@@ -45,6 +48,9 @@ export default function TestReviewPage({
           </h2>
           <p className={reviewTheme.descriptionClass}>
             Check unanswered and marked questions before you continue. Select any number to jump back into that question.
+          </p>
+          <p className="mt-3 text-sm font-bold uppercase tracking-[0.12em] text-ink-fg/70">
+            Answer at least {minimumRequiredAnswers} of {questions.length} questions to continue.
           </p>
         </div>
 

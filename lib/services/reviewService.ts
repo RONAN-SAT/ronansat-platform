@@ -1,12 +1,22 @@
 import { API_PATHS } from "@/lib/apiPaths";
 import api from "@/lib/axios";
 import { getDefaultReviewReasonCatalog } from "@/lib/reviewReasonCatalog";
-import type { ReviewErrorLogPage, ReviewResult } from "@/types/review";
+import type { ReviewAnswer, ReviewErrorLogPage, ReviewResult } from "@/types/review";
 import type { ReviewReasonItem } from "@/types/reviewReason";
 
 export async function fetchReviewResults() {
-  const res = await api.get(API_PATHS.RESULTS);
+  const res = await api.get(`${API_PATHS.RESULTS}?summary=1`);
   return (res.data.results || []) as ReviewResult[];
+}
+
+export async function fetchReviewResult(resultId: string) {
+  const res = await api.get(API_PATHS.getReviewResult(resultId));
+  return res.data.result as ReviewResult;
+}
+
+export async function fetchReviewQuestion(resultId: string, questionId: string) {
+  const res = await api.get(API_PATHS.getReviewQuestion(resultId, questionId));
+  return res.data.answer as ReviewAnswer;
 }
 
 type FetchReviewErrorLogPageOptions = {

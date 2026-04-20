@@ -47,6 +47,17 @@ function clearDashboardCaches() {
   cacheKeys.forEach((key) => deleteClientCache(key));
 }
 
+function getAnsweredQuestionCount(questions: TestQuestion[], answers: Record<string, string>) {
+  return questions.filter((question) => {
+    const answer = answers[question._id];
+    return Boolean(answer && answer !== "Omitted");
+  }).length;
+}
+
+function getMinimumRequiredAnswers(totalQuestions: number) {
+  return Math.ceil(totalQuestions * 0.75);
+}
+
 export function useTestEngine(testId: string) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -58,10 +69,12 @@ export function useTestEngine(testId: string) {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answerTimestamps, setAnswerTimestamps] = useState<Record<string, string>>({});
   const [flagged, setFlagged] = useState<Record<string, boolean>>({});
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
   const isSubmittingRef = useRef(false);
 
   const availableModules = testStages
@@ -75,11 +88,13 @@ export function useTestEngine(testId: string) {
   const currentModuleQuestions = questions.filter(
     (question) => question.section === currentStage.section && question.module === currentStage.module
   );
+  const answeredCurrentModuleQuestions = getAnsweredQuestionCount(currentModuleQuestions, answers);
+  const minimumRequiredCurrentModuleAnswers = getMinimumRequiredAnswers(currentModuleQuestions.length);
 
   const { timeRemaining, setTimeRemaining, isTimerHidden, setIsTimerHidden } = useTimer(
     0,
     loading || isSubmitting,
-    () => handleSubmit()
+    () => handleSubmit({ trigger: "timer" })
   );
 
   useEffect(() => {
@@ -99,6 +114,9 @@ export function useTestEngine(testId: string) {
         }));
         setQuestions(fetchedQuestions);
         setCurrentIndex(0);
+        setAnswers({});
+        setAnswerTimestamps({});
+        setFlagged({});
 
         const validStages = testStages
           .map((stage, index) => ({ ...stage, originalIndex: index }))
@@ -138,6 +156,11 @@ export function useTestEngine(testId: string) {
 
   const handleAnswerSelect = (questionId: string, choice: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: choice }));
+    if (!choice || choice === "Omitted") {
+      return;
+    }
+
+    setAnswerTimestamps((prev) => ({ ...prev, [questionId]: new Date().toISOString() }));
   };
 
   const toggleFlag = (questionId: string) => {
@@ -160,8 +183,20 @@ export function useTestEngine(testId: string) {
     setCurrentIndex(index);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (options?: { bypassCompletionGate?: boolean; trigger?: "manual" | "timer" }) => {
     if (isSubmittingRef.current) {
+      return;
+    }
+
+    if (!options?.bypassCompletionGate && answeredCurrentModuleQuestions < minimumRequiredCurrentModuleAnswers) {
+      if (options?.trigger === "timer") {
+        setIsDiscardDialogOpen(true);
+        return;
+      }
+
+      window.alert(
+        `You need to answer at least ${minimumRequiredCurrentModuleAnswers} of ${currentModuleQuestions.length} questions in this module before you can continue.`
+      );
       return;
     }
 
@@ -181,11 +216,13 @@ export function useTestEngine(testId: string) {
 
     try {
       const questionsToGrade = mode === "sectional" ? currentModuleQuestions : questions;
+      const submissionTimestamp = new Date().toISOString();
       const formattedAnswers = questionsToGrade.map((question) => {
         const userAnswer = answers[question._id] || "Omitted";
         return {
           questionId: question._id,
           userAnswer,
+          answeredAt: userAnswer === "Omitted" ? submissionTimestamp : answerTimestamps[question._id] ?? submissionTimestamp,
           isCorrect: checkIsCorrect(question, userAnswer),
         };
       });
@@ -286,6 +323,10 @@ export function useTestEngine(testId: string) {
     currentStageIndex,
     isSubmitting,
     availableModules,
+    answeredCurrentModuleQuestions,
+    minimumRequiredCurrentModuleAnswers,
+    isDiscardDialogOpen,
+    setIsDiscardDialogOpen,
     handleAnswerSelect,
     toggleFlag,
     handleNext,

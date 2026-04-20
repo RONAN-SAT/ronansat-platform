@@ -16,6 +16,7 @@ const SectionalSubjectSchema = z
 export const AnswerValidationSchema = z.object({
   questionId: z.string().min(1, "Question ID is required"),
   userAnswer: z.string().trim().max(200).optional().nullable(),
+  answeredAt: z.string().datetime().optional().nullable(),
   isCorrect: z.boolean().optional(),
 });
 

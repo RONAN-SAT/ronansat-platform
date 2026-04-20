@@ -97,6 +97,38 @@ export const resultController = {
     }
   },
 
+  async getUserResult(_req: Request, resultId: string) {
+    try {
+      const session = await getServerSession();
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const result = await resultService.getUserResult(session.user.id, resultId);
+      return NextResponse.json({ result });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to fetch result";
+      const status = message === "Result not found" ? 404 : 500;
+      return NextResponse.json({ error: message }, { status });
+    }
+  },
+
+  async getUserResultQuestion(_req: Request, resultId: string, questionId: string) {
+    try {
+      const session = await getServerSession();
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const answer = await resultService.getUserResultQuestion(session.user.id, resultId, questionId);
+      return NextResponse.json({ answer });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to fetch question";
+      const status = message === "Result answer not found" ? 404 : 500;
+      return NextResponse.json({ error: message }, { status });
+    }
+  },
+
   async updateAnswerReason(req: Request) {
     try {
       const session = await getServerSession();
