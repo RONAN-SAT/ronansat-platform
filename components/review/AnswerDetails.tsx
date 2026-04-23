@@ -126,17 +126,12 @@ export default function AnswerDetails({ q, ans }: AnswerDetailsProps) {
           Icon = XCircle;
         }
 
-        const isNeutralChoice = !isCorrectChoice && !isUserChoice;
-        const interactiveClassName = isNeutralChoice
-          ? "workbook-press hover:bg-paper-bg active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-          : "";
-
         return (
-          <div key={index} className={`flex items-center gap-3.5 rounded-2xl border-2 border-ink-fg px-4 py-3.5 brutal-shadow-sm ${wrapClassName} ${interactiveClassName}`}>
+          <div key={index} className={`flex items-start gap-3 rounded-2xl border-2 border-ink-fg px-3 py-3 sm:items-center sm:gap-3.5 sm:px-4 sm:py-3.5 ${wrapClassName}`}>
             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-ink-fg text-sm font-black ${circleClassName}`}>
               {optionLabels[index] || ""}
             </div>
-            <span className="flex-1 font-[Georgia,serif] text-[15.5px] leading-[1.65]">
+            <span className="min-w-0 flex-1 break-words font-[Georgia,serif] text-[15px] leading-[1.65] sm:text-[15.5px]">
               {renderHtmlLatexContent(choice ?? "")}
             </span>
             {Icon ? <Icon className="h-5 w-5 shrink-0" /> : null}

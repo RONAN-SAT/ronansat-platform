@@ -95,7 +95,7 @@ function ReviewQuestionContent() {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-paper-bg">
+    <div className="min-h-screen overflow-x-hidden bg-surface-white md:h-screen md:overflow-hidden">
       <ReviewPopup
         ans={answer ?? { isCorrect: false }}
         onClose={handleBack}

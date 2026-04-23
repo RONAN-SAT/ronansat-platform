@@ -82,10 +82,10 @@ export default function ReviewPopup({
   };
 
   return (
-    <div className={isPageVariant ? "flex h-screen flex-col overflow-hidden bg-paper-bg" : "fixed inset-0 z-[100] flex flex-col bg-paper-bg"}>
+    <div className={isPageVariant ? "flex min-h-screen flex-col bg-surface-white md:h-screen md:overflow-hidden" : "fixed inset-0 z-[100] flex flex-col bg-paper-bg"}>
       <DesmosCalculator isOpen={showCalculator} onClose={() => setShowCalculator(false)} />
 
-      <header className="flex min-h-20 shrink-0 items-center justify-between gap-4 border-b-4 border-ink-fg bg-surface-white px-4 py-3 sm:px-6">
+      <header className="flex shrink-0 flex-col gap-3 border-b-4 border-ink-fg bg-surface-white px-4 py-3 sm:px-6 md:min-h-20 md:flex-row md:items-center md:justify-between md:gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {q.domain ? <span className={`workbook-sticker ${isMath ? "bg-accent-2 text-white" : "bg-accent-1 text-ink-fg"}`}>{q.domain}</span> : null}
@@ -93,15 +93,15 @@ export default function ReviewPopup({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 md:w-auto md:justify-end">
           {isMath ? (
             <button
               onClick={() => setShowCalculator((current) => !current)}
               title="Open Desmos Calculator"
-              className={`rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press ${showCalculator ? "bg-accent-2 text-white" : "bg-surface-white text-ink-fg"}`}
+              className={`flex-1 rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press md:flex-none ${showCalculator ? "bg-accent-2 text-white" : "bg-surface-white text-ink-fg"}`}
               type="button"
             >
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center justify-center gap-1.5">
                 <Calculator className="h-4 w-4" />
                 Calc
               </span>
@@ -112,24 +112,26 @@ export default function ReviewPopup({
 
           <button
             onClick={handleToggleExplanation}
-            className={`rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press ${isExplanationVisible ? "bg-primary text-ink-fg" : "bg-surface-white text-ink-fg"}`}
+            className={`flex-1 rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press md:flex-none ${isExplanationVisible ? "bg-primary text-ink-fg" : "bg-surface-white text-ink-fg"}`}
             type="button"
           >
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center justify-center gap-1.5">
               <BookOpen className="h-4 w-4" />
-              {loadingExplanation ? "Loading..." : "Explanation"}
+              <span className="sm:hidden">Explain</span>
+              <span className="hidden sm:inline">{loadingExplanation ? "Loading..." : "Explanation"}</span>
               {isExplanationVisible ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             </span>
           </button>
 
           <button
             onClick={onClose}
-            className="rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press bg-surface-white text-ink-fg"
+            className="flex-1 rounded-2xl border-2 border-ink-fg px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] brutal-shadow-sm workbook-press bg-surface-white text-ink-fg md:flex-none"
             type="button"
           >
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center justify-center gap-1.5 whitespace-nowrap">
               <X className="h-4 w-4" />
-                {closeLabel}
+              <span className="sm:hidden">Back</span>
+              <span className="hidden sm:inline">{closeLabel}</span>
               </span>
             </button>
           </div>
@@ -139,23 +141,23 @@ export default function ReviewPopup({
         annotations={annotations}
         onChange={setAnnotations}
         sourceQuestionId={q._id}
-        className={`relative flex min-h-0 flex-1 overflow-hidden bg-paper-bg bg-dot-pattern ${isPageVariant ? "bg-paper-bg" : ""}`}
+        className={`relative flex min-h-0 flex-1 bg-surface-white md:overflow-hidden ${isPageVariant ? "bg-surface-white" : "bg-paper-bg bg-dot-pattern"}`}
       >
-        <div className="flex h-full min-h-0 flex-1 items-stretch overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col items-stretch overflow-visible md:h-full md:flex-row md:overflow-hidden">
           <PassageColumn q={q} />
 
-          <div className={`${q.passage ? "w-1/2" : "mx-auto w-full max-w-4xl"} h-full min-h-0 overflow-y-auto bg-paper-bg`}>
-            <div className="flex flex-col gap-5 p-6 lg:p-8">
+          <div className={`${q.passage ? "w-full md:w-1/2" : "mx-auto w-full max-w-4xl"} min-h-0 overflow-visible bg-surface-white md:h-full md:overflow-y-auto`}>
+            <div className="flex flex-col gap-5 px-2 pb-5 pt-2 sm:p-6 lg:p-8">
               {!q.passage ? (
                 <QuestionExtraBlock
                   extra={q.extra}
-                  className="rounded-2xl border-2 border-ink-fg bg-surface-white p-4"
+                  className="rounded-2xl bg-surface-white p-4"
                   titleClassName="mb-2 text-center font-sans text-[16px] font-normal leading-[1.35] text-ink-fg"
                 />
               ) : null}
 
-              <div className="overflow-hidden rounded-2xl border-2 border-ink-fg bg-surface-white px-6 py-5">
-                <p className="font-[Georgia,serif] text-[17.5px] leading-[1.7] text-ink-fg">
+              <div className="overflow-hidden rounded-2xl bg-surface-white px-1 py-2 sm:px-6 sm:py-5">
+                <p className="font-[Georgia,serif] text-[15.5px] leading-[1.7] text-ink-fg sm:text-[17.5px]">
                   {renderHtmlLatexContent(q.questionText || "")}
                 </p>
               </div>
