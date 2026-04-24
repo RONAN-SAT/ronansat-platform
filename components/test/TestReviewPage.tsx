@@ -37,6 +37,7 @@ export default function TestReviewPage({
   const reviewTheme = themePreset.review;
   const flaggedCount = questions.filter((question) => !!flagged[question._id]).length;
   const unansweredCount = questions.length - answeredCount;
+  const minimumAnswerCopy = submitLabel === "Next Module" ? "move on early" : "submit before time runs out";
 
   return (
     <section className="mx-auto mb-16 mt-14 flex h-[calc(100vh-7rem)] w-full max-w-5xl items-start justify-center overflow-y-auto px-4 py-6 sm:mb-20 sm:mt-20 sm:h-[calc(100vh-10rem)] sm:px-6 sm:py-8">
@@ -47,10 +48,10 @@ export default function TestReviewPage({
             {moduleName}
           </h2>
           <p className={reviewTheme.descriptionClass}>
-            Check unanswered and marked questions before you continue. Select any number to jump back into that question.
+            Check unanswered and marked questions before using the action button. Select any number to jump back into that question.
           </p>
           <p className="mt-3 text-sm font-bold uppercase tracking-[0.12em] text-ink-fg/70">
-            Answer at least {minimumRequiredAnswers} of {questions.length} questions to continue.
+            Answer at least {minimumRequiredAnswers} of {questions.length} questions to {minimumAnswerCopy}.
           </p>
         </div>
 

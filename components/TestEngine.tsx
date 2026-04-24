@@ -9,16 +9,6 @@ import SimpleLoading from "@/components/SimpleLoading";
 import TestFooter from "@/components/test/TestFooter";
 import TestHeader from "@/components/test/TestHeader";
 import TestReviewPage from "@/components/test/TestReviewPage";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogActionButton,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useTestingRoomTheme } from "@/hooks/useTestingRoomTheme";
 import { useIntentPrefetch } from "@/hooks/useIntentPrefetch";
 import { getTestingRoomThemePreset } from "@/lib/testingRoomTheme";
@@ -45,8 +35,6 @@ export default function TestEngine({ testId }: { testId: string }) {   // Khởi
     currentStage,
     currentStageIndex,
     isSubmitting,
-    isDiscardDialogOpen,
-    setIsDiscardDialogOpen,
     availableModules,
     answeredCurrentModuleQuestions,
     minimumRequiredCurrentModuleAnswers,
@@ -63,7 +51,6 @@ export default function TestEngine({ testId }: { testId: string }) {   // Khởi
   const [isReviewPageOpen, setIsReviewPageOpen] = useState(false);   // Check trang review đang đóng hay mở
 
   const { leftWidth, isDragging, containerRef, handleDividerMouseDown } = useResizableDivider(50);  // Công cụ cho kéo thay đổi kich thước bài test
-  const discardExitHref = mode === "sectional" ? "/sectional" : "/full-length";  // Tính toán để nếu User thoát thì điều hướng về đâu
   const isLastModule =
     availableModules.length === 0 || availableModules[availableModules.length - 1].originalIndex === currentStageIndex;
   const buttonText = mode === "sectional" ? "Submit Module" : isLastModule ? "Submit Test" : "Next Module";
@@ -108,10 +95,10 @@ export default function TestEngine({ testId }: { testId: string }) {   // Khởi
   // Logic yêu cầu hoàn thành min câu để được nộp
   const confirmDescription =
     mode === "sectional"
-      ? `You must answer at least ${minimumRequiredCurrentModuleAnswers} questions before submitting this module.`
+      ? `Answer at least ${minimumRequiredCurrentModuleAnswers} questions to submit before time runs out.`
       : isLastModule
-        ? `You must answer at least ${minimumRequiredCurrentModuleAnswers} questions in this module before submitting the test.`
-        : `You must answer at least ${minimumRequiredCurrentModuleAnswers} questions in this module before moving on.`;
+        ? `Answer at least ${minimumRequiredCurrentModuleAnswers} questions in this module to submit before time runs out.`
+        : `Answer at least ${minimumRequiredCurrentModuleAnswers} questions in this module to move on early.`;
 
 
   return (
@@ -119,37 +106,13 @@ export default function TestEngine({ testId }: { testId: string }) {   // Khởi
       className={`relative flex min-h-screen flex-col overflow-hidden ${themePreset.shell.rootClass}`}
     >
       <InitialTabBootReady />
-      <AlertDialog open={isDiscardDialogOpen}>
-        <AlertDialogContent className={themePreset.dialog.contentClass}>
-          <AlertDialogHeader>
-            <div className={themePreset.dialog.iconDangerClass}>Time&apos;s up</div>
-            <AlertDialogTitle className={themePreset.dialog.titleClass}>Result Discarded</AlertDialogTitle>
-            <AlertDialogDescription className={themePreset.dialog.descriptionClass}>
-              You answered {answeredCurrentModuleQuestions} of {currentModuleQuestions.length} questions in this module. You must complete at least {minimumRequiredCurrentModuleAnswers} questions to save anything, so this attempt was discarded.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter>
-            <AlertDialogAction asChild>
-              <AlertDialogActionButton
-                className={themePreset.dialog.dangerButtonClass}
-                onClick={() => {
-                  setIsDiscardDialogOpen(false);
-                  router.push(discardExitHref);
-                }}
-              >
-                Return to Library
-              </AlertDialogActionButton>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <TestHeader
         theme={testingRoomTheme}
         sectionName={`${currentStage.section} - Module ${currentStage.module}`}
         timeRemaining={timeRemaining}
-        onTimeUp={handleSubmit}
+        onTimeUp={() => {
+          void handleSubmit({ trigger: "manual" });
+        }}
         isSubmitting={isSubmitting}
         isTimerHidden={isTimerHidden}
         setIsTimerHidden={setIsTimerHidden}
@@ -201,7 +164,7 @@ export default function TestEngine({ testId }: { testId: string }) {   // Khởi
             onReturn={() => setIsReviewPageOpen(false)}
             onSubmit={() => {
               setIsReviewPageOpen(false);
-              void handleSubmit();
+              void handleSubmit({ trigger: "manual" });
             }}
           />
         ) : (
