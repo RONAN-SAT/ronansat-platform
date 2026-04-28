@@ -8,6 +8,7 @@ import { ChevronLeft, Search } from "lucide-react";
 import { CompactPagination } from "@/components/ui/CompactPagination";
 import { PaginatedStickyTableShell } from "@/components/ui/PaginatedStickyTableShell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TokenLockManager } from "@/components/test-manager/TokenLockManager";
 import { fetchTestManagerCatalogPage } from "@/lib/services/testManagerCatalogClient";
 import type { TestManagerCatalogRow, TestManagerCatalogSearchScope, TestManagerCatalogSortOption } from "@/types/testManager";
 
@@ -189,6 +190,8 @@ export function ManageTestsPageContent() {
             </Link>
           </div>
         </section>
+
+        <TokenLockManager />
 
         <section className="workbook-panel-muted shrink-0 p-4">
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px]">

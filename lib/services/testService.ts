@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { MATH_SECTION, VERBAL_SECTION, isVerbalSection } from "@/lib/sections";
 import { TestValidationSchema, type TestInput } from "@/lib/schema/test";
+import { testAccessService } from "@/lib/services/testAccessService";
 
 type SortableTestField = "createdAt" | "title";  // 2 way to sort
 type TestFilters = {                             // Filter: Only show test accoding to subject (Math/Verbal) or period (March 2025)
@@ -118,7 +119,7 @@ function matchesSubject(sections: RawTestRow["test_sections"], subject?: string 
 }
 
 
-function toLegacyTestShape(test: RawTestRow) { 
+function toLegacyTestShape(test: RawTestRow, lockedTestIds = new Set<string>()) { 
   const sections = [...(test.test_sections ?? [])]              // Sao chép các dữ liệu của bài test đó
     .sort((left, right) => left.display_order - right.display_order)       // sort từ nhỏ tới lớn
     .map((section) => ({                         // database thích tên dữ liệu kiểu question_count nhưng FE thích kiểu questionsCount => đi qua từng section, copy thông tin từ vd question_count vào questionsCount
@@ -146,6 +147,7 @@ function toLegacyTestShape(test: RawTestRow) {
     difficulty: test.difficulty ?? "medium",
     sections,
     questionCounts,
+    requiresToken: lockedTestIds.has(test.id),
     createdAt: test.created_at,
   };
 }
@@ -183,6 +185,7 @@ export const testService = {
     }
 
     const rows = (data ?? []) as RawTestRow[];
+    const lockedTestIds = await testAccessService.getLockedTestIds(rows.map((test) => test.id));
     const filtered = rows.filter((test) => matchesPeriod(test.title, filters.period) && matchesSubject(test.test_sections, filters.subject));
     const availablePeriods = ["All", ...sortPeriods(Array.from(new Set(rows.map((test) => getTestPeriodLabel(test.title)))))];
 
@@ -219,7 +222,7 @@ export const testService = {
     // nếu usePagination true => slice để cắt 1 đoạn thuộc trang hiện tại
 
     return {
-      tests: paged.map(toLegacyTestShape),       // Hiện các bài thi được filter, ép test có tên theo hàm toLegacyTestShape đặt
+      tests: paged.map((test) => toLegacyTestShape(test, lockedTestIds)),       // Hiện các bài thi được filter, ép test có tên theo hàm toLegacyTestShape đặt
       availablePeriods,                          // Array chứa tên gồm 2 từ đầu của tất cả bài test
       pagination: {
         total: filtered.length,                  // tổng test theo yêu cầu filter
@@ -258,7 +261,8 @@ export const testService = {
       throw new Error("Test not found");
     }
 
-    return toLegacyTestShape(data as RawTestRow);   // as RawTestRow để đảm bảo TS không báo lỗi 
+    const lockedTestIds = await testAccessService.getLockedTestIds([testId]);
+    return toLegacyTestShape(data as RawTestRow, lockedTestIds);   // as RawTestRow để đảm bảo TS không báo lỗi 
   },
 
   async createTest(data: unknown) {

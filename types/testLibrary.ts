@@ -20,6 +20,7 @@ export type TestListItem = {
   difficulty: string;
   sections: TestSection[];
   questionCounts?: Partial<TestQuestionCounts>;
+  requiresToken?: boolean;
 };
 
 export type UserResultAnswerSummary = {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import BrandLogo from "@/components/BrandLogo";
+import { TestAccessButton } from "@/components/test-access/TestAccessButton";
 import { MATH_SECTION, VERBAL_SECTION, normalizeSectionName } from "@/lib/sections";
 import { testService } from "@/lib/services/testService";
 import { buildTestingRoomHref } from "@/lib/testEntryLinks";
@@ -175,12 +176,15 @@ export default async function TestEntryPage({ params, searchParams }: PageProps)
                     </div>
                     {mode === "sectional" && !selectedModule ? (
                       <div className="mt-4">
-                        <Link
+                        <TestAccessButton
                           href={buildTestingRoomHref(id, { mode: "sectional", sectionName: item.section, module: item.module })}
+                          testId={id}
+                          testTitle={test.title}
+                          requiresToken={test.requiresToken}
                           className="workbook-button w-full justify-center"
                         >
                           Start {item.title}
-                        </Link>
+                        </TestAccessButton>
                       </div>
                     ) : null}
                   </div>
@@ -198,9 +202,15 @@ export default async function TestEntryPage({ params, searchParams }: PageProps)
               </ul>
               <div className="mt-6 space-y-3">
                 {mode === "full" || selectedModule ? (
-                  <Link href={startHref} className="workbook-button w-full justify-center">
+                  <TestAccessButton
+                    href={startHref}
+                    testId={id}
+                    testTitle={test.title}
+                    requiresToken={test.requiresToken}
+                    className="workbook-button w-full justify-center"
+                  >
                     {mode === "full" ? "Start Full Test" : `Start ${selectedModule?.title ?? "Module"}`}
-                  </Link>
+                  </TestAccessButton>
                 ) : null}
                 <Link href={mode === "sectional" ? "/sectional" : "/full-length"} className="workbook-button workbook-button-secondary w-full justify-center">
                   Return to Library

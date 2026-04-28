@@ -69,6 +69,26 @@ function toLegacyQuestionShape(question: RawQuestionRow) {
   };
 }
 
+async function syncSectionQuestionCount(supabase: ReturnType<typeof createSupabaseAdminClient>, sectionId: string) {
+  const { count, error: countError } = await supabase
+    .from("questions")
+    .select("id", { count: "exact", head: true })
+    .eq("section_id", sectionId);
+
+  if (countError) {
+    throw new Error(countError.message);
+  }
+
+  const { error: updateError } = await supabase
+    .from("test_sections")
+    .update({ question_count: count ?? 0 })
+    .eq("id", sectionId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+}
+
 export const questionService = {
   async getQuestions(testId?: string | null) {
     const supabase = createSupabaseAdminClient();
@@ -243,6 +263,8 @@ export const questionService = {
           throw new Error(sprError.message);
         }
       }
+
+      await syncSectionQuestionCount(supabase, targetSection.id);
 
       return {
         _id: createdQuestion.id,

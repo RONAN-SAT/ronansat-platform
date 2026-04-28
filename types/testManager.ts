@@ -38,3 +38,17 @@ export type TestManagerCatalogPage = {
   nextOffset: number;             // contain the offset for the next page + bool to check if next page has any ques
   hasMore: boolean;
 };
+
+export type TestManagerLockedTestRow = {
+  testId: string;
+  title: string;
+  createdAt: string;
+  requiresToken: boolean;
+  token: string;
+  lockedAt?: string;
+  lockUpdatedAt?: string;
+};
+
+export type TestManagerLockedTestsPayload = {
+  tests: TestManagerLockedTestRow[];
+};
