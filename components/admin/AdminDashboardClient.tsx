@@ -6,7 +6,7 @@ import AdminActionDialog from "@/components/admin/AdminActionDialog";
 import InitialTabBootReady from "@/components/InitialTabBootReady";
 import RoleManagementPanel from "@/components/admin/RoleManagementPanel";
 import CreateStudentForm from "@/components/admin/CreateStudentForm";
-import CreateTestForm from "@/components/admin/CreateTestForm";
+import TestQuestionManagementPanel from "@/components/admin/TestQuestionManagementPanel";
 
 type AdminActionKey = "roles" | "tests" | "hall-of-fame" | null;
 
@@ -21,8 +21,8 @@ export default function AdminDashboardClient() {
     },
     {
       key: "tests" as const,
-      title: "Create Test",
-      description: "Start a new SAT workbook with the default section structure.",
+      title: "Tests & Questions",
+      description: "Create a test, choose an existing test, then add questions manually or with JSON.",
     },
     {
       key: "hall-of-fame" as const,
@@ -84,10 +84,11 @@ export default function AdminDashboardClient() {
       <AdminActionDialog
         open={openAction === "tests"}
         onClose={() => setOpenAction(null)}
-        title="Create Test"
-        description="Start a new workbook from a focused pop-up instead of the main admin page."
+        title="Tests & Questions"
+        description="Create a workbook shell, then add questions to a new or existing test."
+        size="wide"
       >
-        <CreateTestForm embedded />
+        <TestQuestionManagementPanel />
       </AdminActionDialog>
 
       <AdminActionDialog

@@ -6,7 +6,7 @@ import { API_PATHS } from "@/lib/apiPaths";
 import { normalizeSectionName, VERBAL_SECTION } from "@/lib/sections";
 import { CheckCircle, Save, Upload, FileUp, ChevronDown } from "lucide-react";
 
-type TestOption = {
+export type TestOption = {
     _id: string;
     title: string;
 };
@@ -46,7 +46,7 @@ const workbookSelectClassName = "workbook-input appearance-none pr-10 text-sm";
 
 const workbookTextareaClassName = "workbook-input resize-none text-sm";
 
-export default function CreateQuestionForm({ tests }: { tests: TestOption[] }) {
+export default function CreateQuestionForm({ tests, embedded = false }: { tests: TestOption[]; embedded?: boolean }) {
     const [selectedTestId, setSelectedTestId] = useState("");
     const [isTestDropdownOpen, setIsTestDropdownOpen] = useState(false);
 
@@ -269,8 +269,8 @@ export default function CreateQuestionForm({ tests }: { tests: TestOption[] }) {
 
 
     return (
-        <div className="lg:col-span-2">
-            <div className="workbook-panel overflow-visible">
+        <div className={embedded ? "" : "lg:col-span-2"}>
+            <div className={embedded ? "overflow-visible" : "workbook-panel overflow-visible"}>
                 <div className={panelHeaderClassName}>
                     <div className="flex items-center gap-3 text-ink-fg">
                         <div>

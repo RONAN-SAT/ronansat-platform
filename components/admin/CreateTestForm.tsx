@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import api from "@/lib/axios";
 import { API_PATHS } from "@/lib/apiPaths";
 import { VERBAL_SECTION } from "@/lib/sections";
+import type { TestOption } from "@/components/admin/CreateQuestionForm";
 
 type CreateTestFormState = {
   title: string;
@@ -17,7 +18,13 @@ const panelHeaderClassName =
 
 const fieldLabelClassName = "mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-ink-fg/70";
 
-export default function CreateTestForm({ embedded = false }: { embedded?: boolean }) {
+export default function CreateTestForm({
+  embedded = false,
+  onCreated,
+}: {
+  embedded?: boolean;
+  onCreated?: (test: TestOption) => void;
+}) {
   const [testForm, setTestForm] = useState<CreateTestFormState>({
     title: "",
   });
@@ -39,6 +46,9 @@ export default function CreateTestForm({ embedded = false }: { embedded?: boolea
       if (res.status === 200 || res.status === 201) {
         setTestMessage("Test created successfully!");
         setTestForm({ title: "" });
+        if (res.data?.test?._id && res.data?.test?.title) {
+          onCreated?.({ _id: res.data.test._id, title: res.data.test.title });
+        }
       } else {
         setTestMessage(`Error: ${String(res.data?.error || "Error creating test.")}`);
       }
